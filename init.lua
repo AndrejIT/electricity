@@ -607,7 +607,7 @@ local lever_definition_base = {
         name_enabled = "electricity:lever_on",
         name_disabled = "electricity:lever_off",
     },
-    groups = {electricity = 1, cracky = 3, oddly_breakable_by_hand = 3},
+    groups = {electricity = 1, electricity_conductor = 1, cracky = 3, oddly_breakable_by_hand = 3},
     sounds = default.node_sound_wood_defaults(),
 }
 

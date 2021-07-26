@@ -9,3 +9,5 @@ Also, Mesecons code segmentation was too mind-blowing for me to make any modific
 So i introduced my own concept.
 Hopefully, it will work well enough.
 And surely it will be fun!
+
+TODO: sticky piston(tnt and doors); torch.
