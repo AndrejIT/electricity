@@ -806,7 +806,7 @@ minetest.register_craft({
 	output = "electricity:solar",
 	recipe = {
 		{"default:glass", "default:glass", "default:glass"},
-		{"electricity:wire_off", "default:coalblock", "electricity:wire_off"},
+		{"default:goldblock", "default:coalblock", "default:goldblock"},
 		{"default:obsidian", "default:obsidian", "default:obsidian"}
 	}
 })

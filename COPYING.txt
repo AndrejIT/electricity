@@ -1,3 +1,9 @@
+
+Electricity mod for Minetest game.
+
+
+Based on Mesecons Mod for Minetest (mostly node models and textures)
+
 The Mesecons Mod for Minetest is
 	Copyright (C) 2011-2016 Mesecons Mod Developer Team and contributors
 
