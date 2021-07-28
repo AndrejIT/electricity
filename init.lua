@@ -13,6 +13,22 @@ dofile(minetest.get_modpath("electricity").."/internal.lua")
 
 -- dofile(minetest.get_modpath("electricity").."/link_core.lua")
 
+
+function electricity.set(self_pos, from_pos, count)
+    local h = minetest.hash_node_position(self_pos)
+    electricity.rdata[h] = count
+    return 0
+end
+
+function electricity.get(self_pos, from_pos)
+    local h = minetest.hash_node_position(self_pos)
+    local count = 0
+    if electricity.rdata[h] ~= nil then
+        count = electricity.rdata[h]
+    end
+    return count
+end
+
 -- a little recursion to distribute voltage from producers
 function electricity.traverse_connected_nodes(self_pos)
     local h = minetest.hash_node_position(self_pos)
@@ -33,8 +49,7 @@ function electricity.traverse_connected_nodes(self_pos)
     end
 end
 
--- Swap electricity node on or off
-function electricity.swap_on_off(self_pos)
+function electricity.conductor_swap_on_off(self_pos)
     local node = minetest.get_node(self_pos)
     local node_reg = minetest.registered_nodes[node.name]
     if  node_reg and
@@ -49,21 +64,6 @@ function electricity.swap_on_off(self_pos)
             minetest.swap_node(self_pos, node)
         end
     end
-end
-
-function electricity.set(self_pos, from_pos, count)
-    local h = minetest.hash_node_position(self_pos)
-    electricity.rdata[h] = count
-    return 0
-end
-
-function electricity.get(self_pos, from_pos)
-    local h = minetest.hash_node_position(self_pos)
-    local count = 0
-    if electricity.rdata[h] ~= nil then
-        count = electricity.rdata[h]
-    end
-    return count
 end
 
 
@@ -98,15 +98,14 @@ minetest.register_abm{
 	end,
 }
 
--- electricity works
 minetest.register_abm{
-    label = "electricity contsumption",
-	nodenames = {"group:electricity_consumer", "group:electricity_conductor"},
+    label = "electricity conductor",
+	nodenames = {"group:electricity_conductor"},
 	interval = 1,
 	chance = 1,
     catch_up = false,
 	action = function(pos)
-        electricity.swap_on_off(pos)
+        electricity.conductor_swap_on_off(pos)
 	end,
 }
 
@@ -345,6 +344,23 @@ minetest.register_node("electricity:wire_half_on", wire_half_definition)
 
 
 -- LAMP --
+function electricity.lamp_on_timer(self_pos, elapsed)
+    local node = minetest.get_node(self_pos)
+    local node_reg = minetest.registered_nodes[node.name]
+    if  node_reg and
+        node_reg.electricity
+    then
+        local volt = electricity.get(self_pos, self_pos)
+        if volt == 1 and node.name == node_reg.electricity.name_off then
+            node.name = node_reg.electricity.name_on
+            minetest.swap_node(self_pos, node)
+        elseif volt == 0 and node.name == node_reg.electricity.name_on then
+            node.name = node_reg.electricity.name_off
+            minetest.swap_node(self_pos, node)
+        end
+    end
+end
+
 local lamp_definition_base = {
     description = "Electricity lamp",
     drop = "electricity:lamp_off",
@@ -361,11 +377,15 @@ local lamp_definition_base = {
 		},
     paramtype2 = "wallmounted",
     is_ground_content = false,
+    on_timer = function(pos, elapsed)
+        electricity.lamp_on_timer(pos, elapsed)
+        return true
+    end,
     on_construct = function(pos)
         local h = minetest.hash_node_position(pos)
         electricity.not_producers[h] = pos
         electricity.set(pos, pos, 0)
-        -- minetest.get_node_timer(pos):start(1.0)
+        minetest.get_node_timer(pos):start(0.5)
     end,
     after_destruct = function(pos)
         local h = minetest.hash_node_position(pos)
@@ -639,14 +659,7 @@ function electricity.transistor_on_timer(self_pos, elapsed)
         node_reg.electricity and
         node_reg.electricity.name_enabled
     then
-        local face_vector = nil
-        if node_reg.paramtype2 == "wallmounted" then
-            face_vector = vector.multiply(minetest.wallmounted_to_dir(node.param2), -1)
-        elseif node_reg.paramtype2 == "facedir" then
-            face_vector = vector.multiply(minetest.facedir_to_dir(node.param2), -1)
-        else
-            face_vector = vector.new(1,0,0)
-        end
+        local face_vector = electricity.get_node_face_direction(self_pos)
 
     	local base_pos = get_pos_relative(self_pos, {x=0, y=0, z=-1}, face_vector)
         local h = minetest.hash_node_position(base_pos)
@@ -662,6 +675,35 @@ function electricity.transistor_on_timer(self_pos, elapsed)
         else
             if node.name == node_reg.electricity.name_enabled then
                 node.name = node_reg.electricity.name_disabled
+                minetest.swap_node(self_pos, node)
+            end
+    	end
+    end
+end
+
+function electricity.transistor_nc_on_timer(self_pos, elapsed)
+	local node = minetest.get_node(self_pos)
+    local node_reg = minetest.registered_nodes[node.name]
+    if  node_reg and
+        node_reg.electricity and
+        node_reg.electricity.name_enabled
+    then
+        local face_vector = electricity.get_node_face_direction(self_pos)
+
+    	local base_pos = get_pos_relative(self_pos, {x=0, y=0, z=-1}, face_vector)
+        local h = minetest.hash_node_position(base_pos)
+        local volt = 0
+        if electricity.rdata[h] ~= nil then
+            volt = electricity.rdata[h]
+        end
+    	if electricity.check_relative_rule(base_pos, self_pos) and volt == 1 then
+            if node.name == node_reg.electricity.name_enabled then
+                node.name = node_reg.electricity.name_disabled
+                minetest.swap_node(self_pos, node)
+            end
+        else
+            if node.name == node_reg.electricity.name_disabled then
+                node.name = node_reg.electricity.name_enabled
                 minetest.swap_node(self_pos, node)
             end
     	end
@@ -714,6 +756,7 @@ local transistor_definition_base = {
     sounds = default.node_sound_wood_defaults(),
 }
 
+-- PNP? normally opened?
 local transistor_definition = table.copy(transistor_definition_base)
 minetest.register_node("electricity:transistor_off", transistor_definition)
 transistor_definition = table.copy(transistor_definition)
@@ -723,10 +766,305 @@ transistor_definition.groups["not_in_creative_inventory"] = 1
 transistor_definition.electricity.rules = {
     {x=-1,y=0,z=0},
     {x=1,y=0,z=0},
-    {x=0,y=-1,z=0}, -- also bottom
-
+    -- {x=0,y=-1,z=0}, -- also bottom
 }
 minetest.register_node("electricity:transistor_on", transistor_definition)
+
+-- Normally Closed
+local transistor_definition = table.copy(transistor_definition_base)
+transistor_definition.description = "Electricity transistor (Normally Closed)"
+transistor_definition.inventory_image = "electricity_transistor_nc.png"
+transistor_definition.wield_image = "electricity_transistor_nc.png"
+transistor_definition.on_timer = function(pos, elapsed)
+    electricity.transistor_nc_on_timer(pos, elapsed)
+    return true
+end
+transistor_definition.tiles = {"electricity_transistor_nc.png^".."jeija_gate_off.png^"..
+    "electricity_transistor_nc.png"}
+transistor_definition.electricity.name_enabled = "electricity:transistor_nc_on"
+transistor_definition.electricity.name_disabled = "electricity:transistor_nc_off"
+minetest.register_node("electricity:transistor_nc_off", transistor_definition)
+transistor_definition = table.copy(transistor_definition)
+transistor_definition.tiles = {"electricity_transistor_nc.png^".."jeija_gate_on.png^"..
+    "electricity_transistor_nc.png"}
+transistor_definition.groups["not_in_creative_inventory"] = 1
+transistor_definition.electricity.rules = {
+    {x=-1,y=0,z=0},
+    {x=1,y=0,z=0},
+    -- {x=0,y=-1,z=0}, -- also bottom
+}
+minetest.register_node("electricity:transistor_nc_on", transistor_definition)
+
+
+-- PISTONS
+-- Swap electricity node on or off
+function electricity.piston_on_timer(self_pos, elapsed)
+    local node = minetest.get_node(self_pos)
+    local node_reg = minetest.registered_nodes[node.name]
+    if  node_reg and
+        node_reg.electricity
+    then
+        local volt = electricity.get(self_pos, self_pos)
+        if volt == 1 and node.name == node_reg.electricity.name_off then
+            node.name = node_reg.electricity.name_on
+            if node.name == "electricity:piston_on" then
+                electricity.piston_on(self_pos, node)
+            end
+        elseif volt == 0 and node.name == node_reg.electricity.name_on then
+            node.name = node_reg.electricity.name_off
+            if node.name == "electricity:piston_off" then
+                electricity.piston_off(self_pos, node)
+            end
+        end
+    end
+end
+
+function electricity.piston_on(pos, node)
+    local face_vector = electricity.get_node_face_direction(pos)
+	local node0_pos = electricity.get_pos_relative(pos, {x=1,y=0,z=0}, face_vector, null)
+    local node1_pos = electricity.get_pos_relative(pos, {x=2,y=0,z=0}, face_vector, null)
+    local node0 = minetest.get_node(node0_pos)
+    local node1 = minetest.get_node(node1_pos)
+
+    -- Permission check?
+    local meta = minetest.get_meta(pos)
+    local owner = meta:get_string("owner")
+    if
+        minetest.is_protected(node0_pos, owner) or
+        minetest.is_protected(node1_pos, owner)
+    then
+        return false
+    end
+
+    -- Free space check
+    if not electricity.node_replaceable(node0.name) and not electricity.node_replaceable(node1.name) then
+
+        -- Actions (tnt, doors) - TODO
+
+        return false
+    end
+
+    -- Stoppers?
+    -- unknown nodes are always stoppers
+    if not minetest.registered_nodes[node0.name] then
+        return true
+    end
+
+    if
+        node0.name == "protector:protect" or
+        node0.name == "protector:protect2" or
+        node0.name == "protector_mese:protect" or
+        node0.name == "protector_mese:brazier_bronze" or
+        node0.name == "protector_mese:brazier_gold" or
+        node0.name == "doors:door_steel_b_1" or
+        node0.name == "doors:door_steel_t_1" or
+        node0.name == "doors:door_steel_b_2" or
+        node0.name == "doors:door_steel_t_2" or
+        node0.name == "electricity:piston_on" or
+        node0.name == "electricity:piston_pusher_sticky"
+    then
+        return false
+    end
+
+    if not electricity.node_replaceable(node0.name) then    -- do not replace nodes with air
+    	local meta0 = minetest.get_meta(node0_pos):to_table()
+    	minetest.set_node(node1_pos, node0)
+    	minetest.get_meta(node1_pos):from_table(meta0)
+    end
+    -- Add pusher
+	minetest.set_node(node0_pos, {name = "electricity:piston_pusher_sticky", param2 = node.param2})
+
+    minetest.swap_node(pos, node)
+
+	minetest.sound_play("piston_extend", {
+		pos = pos,
+		max_hear_distance = 20,
+		gain = 0.3,
+	})
+
+    return true
+end
+
+function electricity.piston_off(pos, node)
+    local face_vector = electricity.get_node_face_direction(pos)
+    local node0_pos = electricity.get_pos_relative(pos, {x=1,y=0,z=0}, face_vector, null)
+    local node1_pos = electricity.get_pos_relative(pos, {x=2,y=0,z=0}, face_vector, null)
+    local node0 = minetest.get_node(node0_pos)
+    local node1 = minetest.get_node(node1_pos)
+
+    -- Permission check?
+    local meta = minetest.get_meta(pos)
+    local owner = meta:get_string("owner")
+    if
+        minetest.is_protected(node0_pos, owner) or
+        minetest.is_protected(node1_pos, owner)
+    then
+        minetest.swap_node(pos, node)
+        if node0.name == "electricity:piston_pusher_sticky" then
+            minetest.set_node(node0_pos, { name = "air" })
+        end
+        return false
+    end
+
+    -- Stoppers?
+    -- unknown nodes are always stoppers
+    if not minetest.registered_nodes[node1.name] then
+        return true
+    end
+
+    if
+        node1.name == "protector:protect" or
+        node1.name == "protector:protect2" or
+        node1.name == "protector_mese:protect" or
+        node1.name == "protector_mese:brazier_bronze" or
+        node1.name == "protector_mese:brazier_gold" or
+        node1.name == "doors:door_steel_b_1" or
+        node1.name == "doors:door_steel_t_1" or
+        node1.name == "doors:door_steel_b_2" or
+        node1.name == "doors:door_steel_t_2" or
+        node1.name == "electricity:piston_on" or
+        node1.name == "electricity:piston_pusher_sticky"
+    then
+        minetest.swap_node(pos, node)
+        if node0.name == "electricity:piston_pusher_sticky" then
+            minetest.set_node(node0_pos, { name = "air" })
+        end
+        return false
+    end
+
+    local meta1 = minetest.get_meta(node1_pos):to_table()
+    minetest.set_node(node1_pos, { name = "air" })
+    minetest.set_node(node0_pos, node1)
+    minetest.get_meta(node0_pos):from_table(meta1)
+
+    minetest.swap_node(pos, node)
+
+    minetest.sound_play("piston_retract", {
+        pos = pos,
+        max_hear_distance = 20,
+        gain = 0.3,
+    })
+    minetest.check_for_falling(node1_pos)
+
+    return true
+end
+
+-- Boxes:
+local pt = 3/16 -- pusher thickness
+
+local piston_pusher_box = {
+	type = "fixed",
+	fixed = {
+		{-2/16, -2/16, -.5 + pt, 2/16, 2/16,  .5 + pt},
+		{-.5  , -.5  , -.5     , .5  , .5  , -.5 + pt},
+	},
+}
+
+local piston_on_box = {
+	type = "fixed",
+	fixed = {
+		{-.5, -.5, -.5 + pt, .5, .5, .5}
+	},
+}
+
+local piston_definition_base = {
+    description = "Electricity piston", -- sticky, 1 node long, also works as activator.
+    drop = "electricity:piston_off",
+    tiles = {
+		"mesecons_piston_top.png",
+		"mesecons_piston_bottom.png",
+		"mesecons_piston_left.png",
+		"mesecons_piston_right.png",
+		"mesecons_piston_back.png",
+		"mesecons_piston_pusher_front_sticky.png"
+	},
+    paramtype2 = "facedir",
+    is_ground_content = false,
+    on_timer = function(pos, elapsed)
+        electricity.piston_on_timer(pos, elapsed)
+        return true
+    end,
+    on_construct = function(pos)
+        local h = minetest.hash_node_position(pos)
+        electricity.not_producers[h] = pos
+        electricity.set(pos, pos, 0)
+        minetest.get_node_timer(pos):start(0.5)
+    end,
+	after_place_node = function(pos, placer)
+		local meta = minetest.get_meta(pos)
+		meta:set_string("owner", placer:get_player_name() or "")
+	end,
+    after_destruct = function(pos)
+        local h = minetest.hash_node_position(pos)
+        electricity.not_producers[h] = nil
+        electricity.rdata[h] = nil
+    end,
+    electricity = {
+        rules = {
+            {x=0,y=1,z=0},
+            {x=-1,y=0,z=0},
+            {x=0,y=0,z=1},
+            {x=0,y=0,z=-1},
+            {x=0,y=-1,z=0},
+        },
+        name_on = "electricity:piston_on",
+        name_off = "electricity:piston_off",
+    },
+    groups = {electricity = 1, electricity_consumer= 1, cracky = 3},
+    sounds = default.node_sound_wood_defaults(),
+}
+
+local piston_definition = table.copy(piston_definition_base)
+minetest.register_node("electricity:piston_off", piston_definition)
+
+piston_definition = table.copy(piston_definition)
+piston_definition.drawtype = "nodebox"
+piston_definition.tiles = {
+    "mesecons_piston_top.png",
+    "mesecons_piston_bottom.png",
+    "mesecons_piston_left.png",
+    "mesecons_piston_right.png",
+    "mesecons_piston_back.png",
+    "mesecons_piston_on_front.png"
+}
+piston_definition.node_box = piston_on_box
+piston_definition.selection_box = piston_on_box
+piston_definition.paramtype = "light"
+piston_definition.groups["not_in_creative_inventory"] = 1
+piston_definition.electricity.rules = {
+    {x=0,y=1,z=0},
+    {x=-1,y=0,z=0},
+    {x=0,y=0,z=1},
+    {x=0,y=0,z=-1},
+    {x=0,y=-1,z=0},
+}
+piston_definition.on_rotate = function(pos, node, player, mode)
+    return false
+end
+minetest.register_node("electricity:piston_on", piston_definition)
+
+-- pusher (part of piston)
+minetest.register_node("electricity:piston_pusher_sticky", {
+	description = "Sticky Piston Pusher",
+	drawtype = "nodebox",
+	tiles = {
+		"mesecons_piston_pusher_top.png",
+		"mesecons_piston_pusher_bottom.png",
+		"mesecons_piston_pusher_left.png",
+		"mesecons_piston_pusher_right.png",
+		"mesecons_piston_pusher_back.png",
+		"mesecons_piston_pusher_front_sticky.png"
+	},
+	groups = {not_in_creative_inventory = 1, cracky = 3},
+	paramtype = "light",
+	paramtype2 = "facedir",
+	is_ground_content = false,
+	-- diggable = false,
+	selection_box = piston_pusher_box,
+	node_box = piston_pusher_box,
+	drop = "",
+	sounds = default.node_sound_wood_defaults(),
+})
 
 
 -- ##############
@@ -814,10 +1152,10 @@ minetest.register_craft({
 minetest.register_craft({
 	output = "electricity:lamp_off",
 	recipe = {
-		{"", "default:glass", ""},
-		{"electricity:wire_off", "default:steelblock", "electricity:wire_off"},
-		{"", "default:glass", ""}
-	}
+		{"", "default:obsidian_glass", ""},
+		{"electricity:wire_off", "default:steel_ingot", "electricity:wire_off"},
+		{"", "default:obsidian_glass", ""}
+	},
 })
 
 minetest.register_craft({
@@ -833,7 +1171,25 @@ minetest.register_craft({
 	output = "electricity:transistor_off",
 	recipe = {
 		{"", "electricity:wire_off", ""},
-		{"electricity:wire_off", "default:mese_crystal", "electricity:wire_off"},
+		{"electricity:wire_off", "default:diamond", "electricity:wire_off"},
 		{"", "default:obsidian", ""}
+	}
+})
+
+minetest.register_craft({
+	output = "electricity:transistor_nc_off",
+	recipe = {
+		{"", "electricity:wire_off", ""},
+		{"electricity:wire_off", "default:obsidian", "electricity:wire_off"},
+		{"", "default:diamond", ""}
+	}
+})
+
+minetest.register_craft({
+	output = "electricity:piston_off",
+	recipe = {
+		{"group:wood",  "group:wood", "group:wood"},
+		{"default:bronze_ingot", "default:steelblock", "default:bronze_ingot"},
+		{"default:bronze_ingot", "electricity:wire_off", "default:bronze_ingot"},
 	}
 })
