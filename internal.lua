@@ -119,121 +119,53 @@ function electricity.node_replaceable(name)
 	return false
 end
 
--- -- not used...
--- -- check if first position connects to second
--- function electricity.check_forward(pos1, pos2)
---     local node = minetest.get_node(pos1)
---     local node_reg = minetest.registered_nodes[node.name]
---     local rules = {}
---
---     if  node_reg and
---         node_reg.electricity and
---         node_reg.electricity.rules
---     then
---         rules = node_reg.electricity.rules
---     end
---
---     local face_vector = electricity.get_node_face_direction(pos1)
---     local down_vector = nil
---
---     for _, rule in ipairs(rules) do
---         if vector.equals(electricity.get_pos_relative(pos1, rule, face_vector, down_vector), pos2) then
---             return true
---         end
---     end
---     return false
--- end
---
--- -- not used ...
--- -- get list of connected AND disconnected "electricity" neighbors positions
--- function electricity.get_all_pos(self_pos)
---     local node = minetest.get_node(self_pos)
---     local node_reg = minetest.registered_nodes[node.name]
---     local rules = {}
---     local connected_pos_list = {}
---     local disconnected_pos_list = {}
---     local tmp_pos_list = {}
---     tmp_pos_list = minetest.find_nodes_in_area(
---         {x=self_pos.x-1, y=self_pos.y-1, z=self_pos.z},
---         {x=self_pos.x-1, y=self_pos.y+1, z=self_pos.z},
---         {"group:electricity"}
---     )
---     for _, pos in ipairs(tmp_pos_list) do
---         table.insert(disconnected_pos_list, pos)
---     end
---     tmp_pos_list = minetest.find_nodes_in_area(
---         {x=self_pos.x+1, y=self_pos.y-1, z=self_pos.z},
---         {x=self_pos.x+1, y=self_pos.y+1, z=self_pos.z},
---         {"group:electricity"}
---     )
---     for _, pos in ipairs(tmp_pos_list) do
---         table.insert(disconnected_pos_list, pos)
---     end
---     tmp_pos_list = minetest.find_nodes_in_area(
---         {x=self_pos.x, y=self_pos.y-1, z=self_pos.z-1},
---         {x=self_pos.x, y=self_pos.y-1, z=self_pos.z+1},
---         {"group:electricity"}
---     )
---     for _, pos in ipairs(tmp_pos_list) do
---         table.insert(disconnected_pos_list, pos)
---     end
---     tmp_pos_list = minetest.find_nodes_in_area(
---         {x=self_pos.x, y=self_pos.y+1, z=self_pos.z-1},
---         {x=self_pos.x, y=self_pos.y+1, z=self_pos.z+1},
---         {"group:electricity"}
---     )
---     for _, pos in ipairs(tmp_pos_list) do
---         table.insert(disconnected_pos_list, pos)
---     end
---     tmp_pos_list = minetest.find_nodes_in_area(
---         {x=self_pos.x-1, y=self_pos.y, z=self_pos.z-1},
---         {x=self_pos.x+1, y=self_pos.y, z=self_pos.z-1},
---         {"group:electricity"}
---     )
---     for _, pos in ipairs(tmp_pos_list) do
---         table.insert(disconnected_pos_list, pos)
---     end
---     tmp_pos_list = minetest.find_nodes_in_area(
---         {x=self_pos.x-1, y=self_pos.y, z=self_pos.z+1},
---         {x=self_pos.x+1, y=self_pos.y, z=self_pos.z+1},
---         {"group:electricity"}
---     )
---     for _, pos in ipairs(tmp_pos_list) do
---         table.insert(disconnected_pos_list, pos)
---     end
---
---     if  node_reg and
---         node_reg.electricity and
---         node_reg.electricity.rules
---     then
---         rules = node_reg.electricity.rules
---     end
---
---     local face_vector = electricity.get_node_face_direction(self_pos)
---     local down_vector = nil
---
---     for _, rule in ipairs(rules) do
---         local match = nil
---
---         local to_pos = electricity.get_pos_relative(self_pos, rule, face_vector, down_vector)
---         if electricity.check_forward(to_pos, self_pos) then
---             table.insert(connected_pos_list, to_pos)
---
---             for key, pos in ipairs(disconnected_pos_list) do
---                 if vector.equals(to_pos, pos) then
---                     match = key
---                     break
---                 end
---             end
---         end
---
---         if match ~= nil then
---             table.remove(disconnected_pos_list, match)
---         end
---     end
---
---     return connected_pos_list,disconnected_pos_list
--- end
+-- Trying optimize mesecons object move function
+-- Move all objects in one node position to nev position
+function electricity.get_move_objects(pos1)
+    local objects_near = minetest.get_objects_inside_radius(pos1, 2)
+	local objects_to_move = {}
+
+	for id, obj in pairs(objects_near) do
+		local obj_pos = obj:getpos()
+		local cbox = obj:get_properties().collisionbox
+		local min_pos = vector.add(obj_pos, vector.new(cbox[1], cbox[2], cbox[3]))
+		local max_pos = vector.add(obj_pos, vector.new(cbox[4], cbox[5], cbox[6]))
+		local ok = true
+		for k, v in pairs(pos1) do
+			local edge1, edge2
+			if k ~= dir_k then
+				edge1 = v - 0.51 -- More than 0.5 to move objects near to the stack.
+				edge2 = v + 0.51
+			else
+				edge1 = v - 0.5 * dir_l
+				edge2 = v + (#nodestack + 0.5 * movefactor) * dir_l
+				-- Make sure, edge1 is bigger than edge2:
+				if edge1 > edge2 then
+					edge1, edge2 = edge2, edge1
+				end
+			end
+			if min_pos[k] > edge2 or max_pos[k] < edge1 then
+				ok = false
+				break
+			end
+		end
+		if ok then
+            objects_to_move[id] = obj
+        end
+    end
+
+    return objects_to_move
+end
+
+function electricity.move_objects(objects_to_move, pos1, pos2)
+    local dir = vector.subtract(pos2, pos1)
+    for id, obj in pairs(objects_to_move) do
+        local obj_pos = obj:getpos()
+        local np = vector.add(obj_pos, dir)
+        obj:move_to(np)
+	end
+
+end
 
 -- this function is available separatelly in coordinate_helper mod
 if _G['get_pos_relative'] then   --check global table if function already defined from coordinate_helper mod

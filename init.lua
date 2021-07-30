@@ -847,7 +847,7 @@ function electricity.piston_on(pos, node)
     -- Stoppers?
     -- unknown nodes are always stoppers
     if not minetest.registered_nodes[node0.name] then
-        return true
+        return false
     end
 
     if
@@ -865,6 +865,20 @@ function electricity.piston_on(pos, node)
     then
         return false
     end
+
+    -- Move objects if there is place for them
+    if electricity.node_replaceable(node0.name) and electricity.node_replaceable(node1.name) then
+        local objects_to_move = electricity.get_move_objects(node0_pos)
+        electricity.move_objects(objects_to_move, node0_pos, node1_pos)
+    elseif electricity.node_replaceable(node1.name) then
+        local node2_pos = electricity.get_pos_relative(pos, {x=3,y=0,z=0}, face_vector, null)
+        local node2 = minetest.get_node(node2_pos)
+        if electricity.node_replaceable(node2.name) then
+            local objects_to_move = electricity.get_move_objects(node1_pos)
+            electricity.move_objects(objects_to_move, node1_pos, node2_pos)
+        end
+    end
+
 
     if not electricity.node_replaceable(node0.name) then    -- do not replace nodes with air
     	local meta0 = minetest.get_meta(node0_pos):to_table()
