@@ -1089,6 +1089,89 @@ minetest.register_node("electricity:piston_pusher_sticky", {
 	sounds = default.node_sound_wood_defaults(),
 })
 
+-- TORCH
+function electricity.torch_on_timer(self_pos, elapsed)
+    local node = minetest.get_node(self_pos)
+    local node_reg = minetest.registered_nodes[node.name]
+    if  node_reg and
+        node_reg.electricity
+    then
+        local volt = electricity.get(self_pos, self_pos)
+        if volt == 1 and node.name == node_reg.electricity.name_off then
+            node.name = node_reg.electricity.name_on
+            minetest.swap_node(self_pos, node)
+        elseif volt == 0 and node.name == node_reg.electricity.name_on then
+            node.name = node_reg.electricity.name_off
+            minetest.swap_node(self_pos, node)
+        end
+    end
+end
+
+local torch_selectionbox = {
+	type = "wallmounted",
+	wall_top = {-0.1, 0.5-0.6, -0.1, 0.1, 0.5, 0.1},
+	wall_bottom = {-0.1, -0.5, -0.1, 0.1, -0.5+0.6, 0.1},
+	wall_side = {-0.5, -0.1, -0.1, -0.5+0.6, 0.1, 0.1},
+}
+
+local torch_definition_base = {
+    description = "Electricity torch",
+    drop = "electricity:torch_off",
+    inventory_image = "jeija_torches_off.png",
+    tiles = {"torch_off.png","torch_off.png","torch_off.png"},
+    paramtype = "light",
+    drawtype = "torchlike",
+	tiles = {"jeija_torches_off.png", "jeija_torches_off_ceiling.png", "jeija_torches_off_side.png"},
+    paramtype2 = "wallmounted",
+    is_ground_content = false,
+	walkable = false,
+    selection_box = torch_selectionbox,
+    sounds = default.node_sound_defaults(),
+    on_timer = function(pos, elapsed)
+        electricity.torch_on_timer(pos, elapsed)
+        return true
+    end,
+	after_place_node = function(pos, placer)
+		local meta = minetest.get_meta(pos)
+		meta:set_string("owner", placer:get_player_name() or "")
+        meta:set_string("infotext", "Torch (owned by "..
+				meta:get_string("owner")..")")
+	end,
+    on_construct = function(pos)
+        local h = minetest.hash_node_position(pos)
+        electricity.not_producers[h] = pos
+        electricity.set(pos, pos, 0)
+        minetest.get_node_timer(pos):start(0.5)
+    end,
+    after_destruct = function(pos)
+        local h = minetest.hash_node_position(pos)
+        electricity.not_producers[h] = nil
+        electricity.rdata[h] = nil
+    end,
+    electricity = {
+        rules = {
+            -- {x=0,y=1,z=0},  -- left :|
+            {x=-1,y=0,z=0}, -- bottom :|
+            -- {x=0,y=0,z=1},
+            -- {x=0,y=0,z=-1},
+            -- {x=0,y=-1,z=0},
+        },
+        name_on = "electricity:torch_on",
+        name_off = "electricity:torch_off",
+    },
+    groups = {electricity = 1, electricity_consumer = 1, cracky = 3, oddly_breakable_by_hand = 3},
+    sounds = default.node_sound_stone_defaults(),
+}
+
+local torch_definition = table.copy(torch_definition_base)
+minetest.register_node("electricity:torch_off", torch_definition)
+torch_definition = table.copy(torch_definition)
+torch_definition.light_source = minetest.LIGHT_MAX-3
+torch_definition.sunlight_propagates = true
+torch_definition.tiles = {"jeija_torches_on.png", "jeija_torches_on_ceiling.png", "jeija_torches_on_side.png"}
+torch_definition.groups["not_in_creative_inventory"] = 1
+minetest.register_node("electricity:torch_on", torch_definition)
+
 
 -- ##############
 -- ## Crafting ##
@@ -1215,4 +1298,12 @@ minetest.register_craft({
 		{"default:bronze_ingot", "default:steelblock", "default:bronze_ingot"},
 		{"default:bronze_ingot", "electricity:wire_off", "default:bronze_ingot"},
 	}
+})
+
+minetest.register_craft({
+	output = "electricity:torch_off",
+	recipe = {
+    	{"electricity:wire_off"},
+    	{"default:stick"},
+    }
 })
