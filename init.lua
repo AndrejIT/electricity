@@ -839,7 +839,16 @@ function electricity.piston_on(pos, node)
     -- Free space check
     if not electricity.node_replaceable(node0.name) and not electricity.node_replaceable(node1.name) then
 
-        -- Actions (tnt, doors) - TODO
+        -- Actions
+        -- Why not use mesecons compatibility? :)
+        local node0_reg = minetest.registered_nodes[node0.name]
+        if
+            node0_reg.mesecons and
+            node0_reg.mesecons.effector and
+            node0_reg.mesecons.effector.action_on
+        then
+            node0_reg.mesecons.effector.action_on(node0_pos, node0)
+        end
 
         return false
     end
