@@ -661,7 +661,7 @@ function electricity.transistor_on_timer(self_pos, elapsed)
     then
         local face_vector = electricity.get_node_face_direction(self_pos)
 
-    	local base_pos = get_pos_relative(self_pos, {x=0, y=0, z=-1}, face_vector)
+    	local base_pos = electricity.get_pos_relative(self_pos, {x=0, y=0, z=-1}, face_vector)
         local h = minetest.hash_node_position(base_pos)
         local volt = 0
         if electricity.rdata[h] ~= nil then
@@ -690,7 +690,7 @@ function electricity.transistor_nc_on_timer(self_pos, elapsed)
     then
         local face_vector = electricity.get_node_face_direction(self_pos)
 
-    	local base_pos = get_pos_relative(self_pos, {x=0, y=0, z=-1}, face_vector)
+    	local base_pos = electricity.get_pos_relative(self_pos, {x=0, y=0, z=-1}, face_vector)
         local h = minetest.hash_node_position(base_pos)
         local volt = 0
         if electricity.rdata[h] ~= nil then
