@@ -10,4 +10,4 @@ So i introduced my own concept.
 Hopefully, it will work well enough.
 And surely it will be fun!
 
-TODO: sticky piston(tnt and doors); torch.
+TODO: doors
