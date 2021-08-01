@@ -1064,6 +1064,22 @@ piston_definition.electricity.rules = {
 piston_definition.on_rotate = function(pos, node, player, mode)
     return false
 end
+piston_definition.on_destruct = function(pos)
+    local face_vector = electricity.get_node_face_direction(pos)
+    local node0_pos = electricity.get_pos_relative(pos, {x=1,y=0,z=0}, face_vector, null)
+    local node0_name = minetest.get_node(node0_pos).name
+    -- make sure there actually is a pusher
+	if node0_name ~= "electricity:piston_pusher_sticky" then
+		return
+	end
+
+    minetest.remove_node(node0_pos)
+	minetest.sound_play("piston_retract", {
+		pos = pos,
+		max_hear_distance = 20,
+		gain = 0.3,
+	})
+end
 minetest.register_node("electricity:piston_on", piston_definition)
 
 -- pusher (part of piston)
@@ -1082,7 +1098,7 @@ minetest.register_node("electricity:piston_pusher_sticky", {
 	paramtype = "light",
 	paramtype2 = "facedir",
 	is_ground_content = false,
-	-- diggable = false,
+	diggable = false,
 	selection_box = piston_pusher_box,
 	node_box = piston_pusher_box,
 	drop = "",
@@ -1159,7 +1175,7 @@ local torch_definition_base = {
         name_on = "electricity:torch_on",
         name_off = "electricity:torch_off",
     },
-    groups = {electricity = 1, electricity_consumer = 1, cracky = 3, oddly_breakable_by_hand = 3},
+    groups = {electricity = 1, electricity_consumer = 1, cracky = 3, oddly_breakable_by_hand = 3, protector = 1},
     sounds = default.node_sound_stone_defaults(),
 }
 
