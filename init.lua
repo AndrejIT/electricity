@@ -1233,14 +1233,16 @@ function electricity.piston2_on(pos, node)
     -- Move objects if there is place for them
     if electricity.node_replaceable(node0.name) and electricity.node_replaceable(node1.name) and electricity.node_replaceable(node2.name) then
         local objects_to_move = electricity.get_move_objects(node0_pos)
-        -- combine with node0_pos?
         electricity.move_objects(objects_to_move, node0_pos, node2_pos)
+    elseif not electricity.node_replaceable(node0.name) and electricity.node_replaceable(node1.name) and electricity.node_replaceable(node3.name) then
+        local objects_to_move = electricity.get_move_objects(node1_pos)
+        electricity.move_objects(objects_to_move, node1_pos, node3_pos)
     elseif electricity.node_replaceable(node2.name) then
         local node4_pos = electricity.get_pos_relative(pos, {x=5,y=0,z=0}, face_vector, null)
         local node4 = minetest.get_node(node4_pos)
         if electricity.node_replaceable(node4.name) then
             local objects_to_move = electricity.get_move_objects(node2_pos)
-            electricity.move_objects(objects_to_move, node2_pos, node4_pos)
+            electricity.move_objects(objects_to_move, node1_pos, node4_pos) -- Fix +1
         end
     end
 
