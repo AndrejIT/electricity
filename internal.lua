@@ -121,10 +121,13 @@ end
 
 -- Trying optimize mesecons object move function
 -- Move all objects in one node position to nev position
-function electricity.get_move_objects(pos1)
-    local objects_near = minetest.get_objects_inside_radius(pos1, 2)
+function electricity.get_move_objects(pos1, objects_near)
+    if objects_near == nil then
+        objects_near = minetest.get_objects_inside_radius(pos1, 2)
+    end
 	local objects_to_move = {}
 
+    -- function from mesecoins
 	for id, obj in pairs(objects_near) do
 		local obj_pos = obj:getpos()
 		local cbox = obj:get_properties().collisionbox
@@ -159,6 +162,10 @@ end
 
 function electricity.move_objects(objects_to_move, pos1, pos2)
     local dir = vector.subtract(pos2, pos1)
+    if dir.y == 1 then
+        -- Fix for player foot falling inside node
+        dir.y = 1.1
+    end
     for id, obj in pairs(objects_to_move) do
         local obj_pos = obj:getpos()
         local np = vector.add(obj_pos, dir)
