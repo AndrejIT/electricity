@@ -128,15 +128,16 @@ function electricity.get_move_objects(pos1, objects_near)
 	local objects_to_move = {}
 
     -- function from mesecoins
+    -- I forgot adding direction part, but oh well it is working...
 	for id, obj in pairs(objects_near) do
-		local obj_pos = obj:getpos()
+		local obj_pos = obj:get_pos()
 		local cbox = obj:get_properties().collisionbox
 		local min_pos = vector.add(obj_pos, vector.new(cbox[1], cbox[2], cbox[3]))
 		local max_pos = vector.add(obj_pos, vector.new(cbox[4], cbox[5], cbox[6]))
 		local ok = true
 		for k, v in pairs(pos1) do
 			local edge1, edge2
-			if k ~= dir_k then
+			if k ~= nil then
 				edge1 = v - 0.51 -- More than 0.5 to move objects near to the stack.
 				edge2 = v + 0.51
 			else
@@ -167,7 +168,7 @@ function electricity.move_objects(objects_to_move, pos1, pos2)
         dir.y = 1.1
     end
     for id, obj in pairs(objects_to_move) do
-        local obj_pos = obj:getpos()
+        local obj_pos = obj:get_pos()
         local np = vector.add(obj_pos, dir)
         obj:move_to(np)
 	end
