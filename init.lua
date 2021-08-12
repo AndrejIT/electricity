@@ -1600,6 +1600,30 @@ torch_definition.groups["not_in_creative_inventory"] = 1
 minetest.register_node("electricity:torch_on", torch_definition)
 
 
+-- electric shock
+minetest.register_on_punchnode(function(pos, node, puncher, pointed_thing)
+    if
+        node.name == "electricity:wire_on" or
+        node.name == "electricity:wire_bend_on" or
+        node.name == "electricity:wire_branch_on" or
+        node.name == "electricity:wire_bend_up_on" or
+        node.name == "electricity:wire_up_on" or
+        node.name == "electricity:wire_branch_up_on" or
+        node.name == "electricity:wire_half_on" or
+        node.name == "electricity:lamp_on" or
+        node.name == "electricity:transistor_on" or
+        node.name == "electricity:transistor_nc_on" or
+        node.name == "electricity:torch_on"
+    then
+        if puncher and puncher:is_player() then
+            puncher:punch(puncher, 1.0, {
+                full_punch_interval=1.0,
+                damage_groups = {fleshy=1}
+            }, nil)
+        end
+    end
+end)
+
 -- ##############
 -- ## Crafting ##
 -- ##############
