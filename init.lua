@@ -202,6 +202,36 @@ wire_bend_definition.tiles = {"electricity_wire_on.png"}
 wire_bend_definition.groups["not_in_creative_inventory"] = 1
 minetest.register_node("electricity:wire_bend_on", wire_bend_definition)
 
+-- WIRE CORNER --
+local wire_corner_definition = table.copy(wire_definition_base)
+wire_corner_definition.description = "Electricity wire corner"
+wire_corner_definition.drop = "electricity:wire_corner_off"
+wire_corner_definition.inventory_image = "electricity_wire_corner_inv.png"
+wire_corner_definition.wield_image = "electricity_wire_corner_inv.png"
+wire_corner_definition.node_box = {
+    type = "fixed",
+    fixed = {
+        {-0.1, -0.5, -0.5, 0.1, -0.45, 0.5},    --
+        {-0.1, -0.45, 0.45, 0.1, 0.5, 0.5},    -- 
+        -- {-0.5, -0.5, -0.1, -0.1, -0.45, 0.1},   -- x=1
+    },
+}
+wire_corner_definition.electricity = {
+    rules = {
+        {x=1,y=0,z=0},
+        {x=-1,y=0,z=0},
+        {x=0,y=1,z=0},
+        {x=0,y=-1,z=0},
+    },
+    name_on = "electricity:wire_corner_on",
+    name_off = "electricity:wire_corner_off",
+}
+minetest.register_node("electricity:wire_corner_off", wire_corner_definition)
+wire_corner_definition = table.copy(wire_corner_definition)
+wire_corner_definition.tiles = {"electricity_wire_on.png"}
+wire_corner_definition.groups["not_in_creative_inventory"] = 1
+minetest.register_node("electricity:wire_corner_on", wire_corner_definition)
+
 -- WIRE BRANCH --
 local wire_branch_definition = table.copy(wire_definition_base)
 wire_branch_definition.description = "Electricity wire branch"
@@ -1605,6 +1635,7 @@ minetest.register_on_punchnode(function(pos, node, puncher, pointed_thing)
     if
         node.name == "electricity:wire_on" or
         node.name == "electricity:wire_bend_on" or
+        node.name == "electricity:wire_corner_on" or
         node.name == "electricity:wire_branch_on" or
         node.name == "electricity:wire_bend_up_on" or
         node.name == "electricity:wire_up_on" or
@@ -1612,7 +1643,6 @@ minetest.register_on_punchnode(function(pos, node, puncher, pointed_thing)
         node.name == "electricity:wire_half_on" or
         node.name == "electricity:lamp_on" or
         node.name == "electricity:transistor_on" or
-        node.name == "electricity:transistor_nc_on" or
         node.name == "electricity:torch_on"
     then
         if puncher and puncher:is_player() then
@@ -1620,6 +1650,19 @@ minetest.register_on_punchnode(function(pos, node, puncher, pointed_thing)
                 full_punch_interval=1.0,
                 damage_groups = {fleshy=1}
             }, nil)
+        end
+    end
+
+    if
+        node.name == "electricity:transistor_nc_on"
+    then
+        if electricity.get(pos, pos) > 0 then
+            if puncher and puncher:is_player() then
+                puncher:punch(puncher, 1.0, {
+                    full_punch_interval=1.0,
+                    damage_groups = {fleshy=1}
+                }, nil)
+            end
         end
     end
 end)
@@ -1684,8 +1727,23 @@ minetest.register_craft({
 
 minetest.register_craft({
     type = "shapeless",
-	output = "electricity:wire_branch_off",
+	output = "default:copper_ingot 5",
 	recipe = {"electricity:wire_branch_up_off"},
+})
+
+minetest.register_craft({
+	output = "electricity:wire_corner_off 2",
+	recipe = {
+		{"", "electricity:wire_off", ""},
+		{"", "", "electricity:wire_off"},
+		{"", "", ""}
+	}
+})
+
+minetest.register_craft({
+    type = "shapeless",
+	output = "electricity:wire_off",
+	recipe = {"electricity:wire_corner_off"},
 })
 
 minetest.register_craft({
