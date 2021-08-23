@@ -176,152 +176,148 @@ function electricity.move_objects(objects_to_move, pos1, pos2)
 end
 
 -- this function is available separatelly in coordinate_helper mod
-if _G['get_pos_relative'] then   --check global table if function already defined from coordinate_helper mod
-    electricity.get_pos_relative = get_pos_relative
-else
-    -- x-FRONT/BACK, z-LEFT/RIGHT, y-UP/DOWN
-    function electricity.get_pos_relative(position, rel_pos, face_vector, down_vector)
-        local pos = {x=position.x,y=position.y,z=position.z}
+-- x-FRONT/BACK, z-LEFT/RIGHT, y-UP/DOWN
+function electricity.get_pos_relative(position, rel_pos, face_vector, down_vector)
+    local pos = {x=position.x,y=position.y,z=position.z}
 
-        assert(vector.length(face_vector) == 1, "Incorrect face vector")
+    assert(vector.length(face_vector) == 1, "Incorrect face vector")
 
-        -- oh no! "wallmounted" and "facedir" cannot store down vector. i choose defaults.
-        if not down_vector then
-            down_vector = {x=0, y=0, z=0}
-            if face_vector.y == 1 then
-                down_vector.x = 1
-            elseif face_vector.y == -1 then
-                down_vector.x = -1
-            else
-                down_vector.y = -1
-            end
+    -- oh no! "wallmounted" and "facedir" cannot store down vector. i choose defaults.
+    if not down_vector then
+        down_vector = {x=0, y=0, z=0}
+        if face_vector.y == 1 then
+            down_vector.x = 1
+        elseif face_vector.y == -1 then
+            down_vector.x = -1
+        else
+            down_vector.y = -1
         end
-
-        assert(vector.length(down_vector) == 1, "Incorrect down vector")
-        assert(vector.length(vector.multiply(face_vector, down_vector)) == 0, "Down vector incompatible with face vector")
-
-        if rel_pos.x == 0 and rel_pos.y == 0 and rel_pos.z == 0 then
-            return {x=pos.x, y=pos.y, z=pos.z}
-        end
-
-        local fdir = face_vector
-        local ddir = down_vector
-
-        if fdir.x == 1 then -- NORD
-            pos.x = pos.x + rel_pos.x
-            if ddir.y == -1 then
-                pos.y = pos.y + rel_pos.y
-                pos.z = pos.z + rel_pos.z
-            elseif ddir.x == 1 then
-                assert(false, "Impossible vector combination!")
-            elseif ddir.x == -1 then
-                assert(false, "Impossible vector combination!")
-            elseif ddir.z == 1 then
-                pos.y = pos.y + rel_pos.z
-                pos.z = pos.z - rel_pos.y
-            elseif ddir.z == -1 then
-                pos.y = pos.y - rel_pos.z
-                pos.z = pos.z + rel_pos.y
-            elseif ddir.y == 1 then
-                pos.y = pos.y - rel_pos.y
-                pos.z = pos.z - rel_pos.z
-            end
-        elseif fdir.z == -1 then -- EAST
-            pos.z = pos.z - rel_pos.x
-            if ddir.y == -1 then
-                pos.y = pos.y + rel_pos.y
-                pos.x = pos.x + rel_pos.z
-            elseif ddir.x == 1 then
-                pos.y = pos.y + rel_pos.z
-                pos.x = pos.x - rel_pos.y
-            elseif ddir.x == -1 then
-                pos.y = pos.y - rel_pos.z
-                pos.x = pos.x + rel_pos.y
-            elseif ddir.z == 1 then
-                assert(false, "Impossible vector combination!")
-            elseif ddir.z == -1 then
-                assert(false, "Impossible vector combination!")
-            elseif ddir.y == 1 then
-                pos.y = pos.y - rel_pos.y
-                pos.x = pos.x - rel_pos.z
-            end
-        elseif fdir.x == -1 then -- SOUTH
-            pos.x = pos.x - rel_pos.x
-            if ddir.y == -1 then
-                pos.y = pos.y + rel_pos.y
-                pos.z = pos.z - rel_pos.z
-            elseif ddir.x == 1 then
-                assert(false, "Impossible vector combination!")
-            elseif ddir.x == -1 then
-                assert(false, "Impossible vector combination!")
-            elseif ddir.z == 1 then
-                pos.y = pos.y - rel_pos.z
-                pos.z = pos.z - rel_pos.y
-            elseif ddir.z == -1 then
-                pos.y = pos.y + rel_pos.z
-                pos.z = pos.z + rel_pos.y
-            elseif ddir.y == 1 then
-                pos.y = pos.y - rel_pos.y
-                pos.z = pos.z + rel_pos.z
-            end
-        elseif fdir.z == 1 then -- WEST
-            pos.z = pos.z + rel_pos.x
-            if ddir.y == -1 then
-                pos.y = pos.y + rel_pos.y
-                pos.x = pos.x - rel_pos.z
-            elseif ddir.x == 1 then
-                pos.y = pos.y - rel_pos.z
-                pos.x = pos.x - rel_pos.y
-            elseif ddir.x == -1 then
-                pos.y = pos.y + rel_pos.z
-                pos.x = pos.x + rel_pos.y
-            elseif ddir.z == 1 then
-                assert(false, "Impossible vector combination!")
-            elseif ddir.z == -1 then
-                assert(false, "Impossible vector combination!")
-            elseif ddir.y == 1 then
-                pos.y = pos.y - rel_pos.y
-                pos.x = pos.x + rel_pos.z
-            end
-        elseif fdir.y == 1 then -- UP
-            pos.y = pos.y + rel_pos.x
-            if ddir.y == -1 then
-                assert(false, "Impossible vector combination!")
-            elseif ddir.x == 1 then
-                pos.x = pos.x - rel_pos.y
-                pos.z = pos.z + rel_pos.z
-            elseif ddir.x == -1 then
-                pos.x = pos.x + rel_pos.y
-                pos.z = pos.z - rel_pos.z
-            elseif ddir.z == 1 then
-                pos.x = pos.x - rel_pos.z
-                pos.z = pos.z - rel_pos.y
-            elseif ddir.z == -1 then
-                pos.x = pos.x + rel_pos.z
-                pos.z = pos.z + rel_pos.y
-            elseif ddir.y == 1 then
-                assert(false, "Impossible vector combination!")
-            end
-        elseif fdir.y == -1 then -- DOWN
-            pos.y = pos.y - rel_pos.x
-            if ddir.y == -1 then
-                assert(false, "Impossible vector combination!")
-            elseif ddir.x == 1 then
-                pos.x = pos.x - rel_pos.y
-                pos.z = pos.z - rel_pos.z
-            elseif ddir.x == -1 then
-                pos.x = pos.x + rel_pos.y
-                pos.z = pos.z + rel_pos.z
-            elseif ddir.z == 1 then
-                pos.x = pos.x + rel_pos.z
-                pos.z = pos.z - rel_pos.y
-            elseif ddir.z == -1 then
-                pos.x = pos.x - rel_pos.z
-                pos.z = pos.z + rel_pos.y
-            elseif ddir.y == 1 then
-                assert(false, "Impossible vector combination!")
-            end
-        end
-        return pos
     end
+
+    assert(vector.length(down_vector) == 1, "Incorrect down vector")
+    assert(vector.length(vector.multiply(face_vector, down_vector)) == 0, "Down vector incompatible with face vector")
+
+    if rel_pos.x == 0 and rel_pos.y == 0 and rel_pos.z == 0 then
+        return {x=pos.x, y=pos.y, z=pos.z}
+    end
+
+    local fdir = face_vector
+    local ddir = down_vector
+
+    if fdir.x == 1 then -- NORD
+        pos.x = pos.x + rel_pos.x
+        if ddir.y == -1 then
+            pos.y = pos.y + rel_pos.y
+            pos.z = pos.z + rel_pos.z
+        elseif ddir.x == 1 then
+            assert(false, "Impossible vector combination!")
+        elseif ddir.x == -1 then
+            assert(false, "Impossible vector combination!")
+        elseif ddir.z == 1 then
+            pos.y = pos.y + rel_pos.z
+            pos.z = pos.z - rel_pos.y
+        elseif ddir.z == -1 then
+            pos.y = pos.y - rel_pos.z
+            pos.z = pos.z + rel_pos.y
+        elseif ddir.y == 1 then
+            pos.y = pos.y - rel_pos.y
+            pos.z = pos.z - rel_pos.z
+        end
+    elseif fdir.z == -1 then -- EAST
+        pos.z = pos.z - rel_pos.x
+        if ddir.y == -1 then
+            pos.y = pos.y + rel_pos.y
+            pos.x = pos.x + rel_pos.z
+        elseif ddir.x == 1 then
+            pos.y = pos.y + rel_pos.z
+            pos.x = pos.x - rel_pos.y
+        elseif ddir.x == -1 then
+            pos.y = pos.y - rel_pos.z
+            pos.x = pos.x + rel_pos.y
+        elseif ddir.z == 1 then
+            assert(false, "Impossible vector combination!")
+        elseif ddir.z == -1 then
+            assert(false, "Impossible vector combination!")
+        elseif ddir.y == 1 then
+            pos.y = pos.y - rel_pos.y
+            pos.x = pos.x - rel_pos.z
+        end
+    elseif fdir.x == -1 then -- SOUTH
+        pos.x = pos.x - rel_pos.x
+        if ddir.y == -1 then
+            pos.y = pos.y + rel_pos.y
+            pos.z = pos.z - rel_pos.z
+        elseif ddir.x == 1 then
+            assert(false, "Impossible vector combination!")
+        elseif ddir.x == -1 then
+            assert(false, "Impossible vector combination!")
+        elseif ddir.z == 1 then
+            pos.y = pos.y - rel_pos.z
+            pos.z = pos.z - rel_pos.y
+        elseif ddir.z == -1 then
+            pos.y = pos.y + rel_pos.z
+            pos.z = pos.z + rel_pos.y
+        elseif ddir.y == 1 then
+            pos.y = pos.y - rel_pos.y
+            pos.z = pos.z + rel_pos.z
+        end
+    elseif fdir.z == 1 then -- WEST
+        pos.z = pos.z + rel_pos.x
+        if ddir.y == -1 then
+            pos.y = pos.y + rel_pos.y
+            pos.x = pos.x - rel_pos.z
+        elseif ddir.x == 1 then
+            pos.y = pos.y - rel_pos.z
+            pos.x = pos.x - rel_pos.y
+        elseif ddir.x == -1 then
+            pos.y = pos.y + rel_pos.z
+            pos.x = pos.x + rel_pos.y
+        elseif ddir.z == 1 then
+            assert(false, "Impossible vector combination!")
+        elseif ddir.z == -1 then
+            assert(false, "Impossible vector combination!")
+        elseif ddir.y == 1 then
+            pos.y = pos.y - rel_pos.y
+            pos.x = pos.x + rel_pos.z
+        end
+    elseif fdir.y == 1 then -- UP
+        pos.y = pos.y + rel_pos.x
+        if ddir.y == -1 then
+            assert(false, "Impossible vector combination!")
+        elseif ddir.x == 1 then
+            pos.x = pos.x - rel_pos.y
+            pos.z = pos.z + rel_pos.z
+        elseif ddir.x == -1 then
+            pos.x = pos.x + rel_pos.y
+            pos.z = pos.z - rel_pos.z
+        elseif ddir.z == 1 then
+            pos.x = pos.x - rel_pos.z
+            pos.z = pos.z - rel_pos.y
+        elseif ddir.z == -1 then
+            pos.x = pos.x + rel_pos.z
+            pos.z = pos.z + rel_pos.y
+        elseif ddir.y == 1 then
+            assert(false, "Impossible vector combination!")
+        end
+    elseif fdir.y == -1 then -- DOWN
+        pos.y = pos.y - rel_pos.x
+        if ddir.y == -1 then
+            assert(false, "Impossible vector combination!")
+        elseif ddir.x == 1 then
+            pos.x = pos.x - rel_pos.y
+            pos.z = pos.z - rel_pos.z
+        elseif ddir.x == -1 then
+            pos.x = pos.x + rel_pos.y
+            pos.z = pos.z + rel_pos.z
+        elseif ddir.z == 1 then
+            pos.x = pos.x + rel_pos.z
+            pos.z = pos.z - rel_pos.y
+        elseif ddir.z == -1 then
+            pos.x = pos.x - rel_pos.z
+            pos.z = pos.z + rel_pos.y
+        elseif ddir.y == 1 then
+            assert(false, "Impossible vector combination!")
+        end
+    end
+    return pos
 end

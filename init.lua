@@ -212,7 +212,7 @@ wire_corner_definition.node_box = {
     type = "fixed",
     fixed = {
         {-0.1, -0.5, -0.5, 0.1, -0.45, 0.5},    --
-        {-0.1, -0.45, 0.45, 0.1, 0.5, 0.5},    -- 
+        {-0.1, -0.45, 0.45, 0.1, 0.5, 0.5},    --
         -- {-0.5, -0.5, -0.1, -0.1, -0.45, 0.1},   -- x=1
     },
 }
@@ -611,7 +611,7 @@ function electricity:lever_on_rightclick(self_pos, node)
     end
     minetest.sound_play("mesecons_lever", {
         pos = self_pos,
-        max_hear_distance = 16,
+        max_hear_distance = 12,
         gain = 10.0,
     })
 end
@@ -851,8 +851,8 @@ end
 
 function electricity.piston_on(pos, node)
     local face_vector = electricity.get_node_face_direction(pos)
-	local node0_pos = electricity.get_pos_relative(pos, {x=1,y=0,z=0}, face_vector, null)
-    local node1_pos = electricity.get_pos_relative(pos, {x=2,y=0,z=0}, face_vector, null)
+	local node0_pos = electricity.get_pos_relative(pos, {x=1,y=0,z=0}, face_vector, nil)
+    local node1_pos = electricity.get_pos_relative(pos, {x=2,y=0,z=0}, face_vector, nil)
     local node0 = minetest.get_node(node0_pos)
     local node1 = minetest.get_node(node1_pos)
 
@@ -895,6 +895,8 @@ function electricity.piston_on(pos, node)
         node0.name == "protector_mese:protect" or
         node0.name == "protector_mese:brazier_bronze" or
         node0.name == "protector_mese:brazier_gold" or
+        node0.name == "default:chest_locked_open" or
+        node0.name == "default:chest_open" or
         node0.name == "doors:door_steel_b_1" or
         node0.name == "doors:door_steel_t_1" or
         node0.name == "doors:door_steel_b_2" or
@@ -912,7 +914,7 @@ function electricity.piston_on(pos, node)
         local objects_to_move = electricity.get_move_objects(node0_pos)
         electricity.move_objects(objects_to_move, node0_pos, node1_pos)
     elseif electricity.node_replaceable(node1.name) then
-        local node2_pos = electricity.get_pos_relative(pos, {x=3,y=0,z=0}, face_vector, null)
+        local node2_pos = electricity.get_pos_relative(pos, {x=3,y=0,z=0}, face_vector, nil)
         local node2 = minetest.get_node(node2_pos)
         if electricity.node_replaceable(node2.name) then
             local objects_to_move = electricity.get_move_objects(node1_pos)
@@ -933,7 +935,7 @@ function electricity.piston_on(pos, node)
 
 	minetest.sound_play("piston_extend", {
 		pos = pos,
-		max_hear_distance = 20,
+		max_hear_distance = 12,
 		gain = 0.3,
 	})
 
@@ -942,8 +944,8 @@ end
 
 function electricity.piston_off(pos, node)
     local face_vector = electricity.get_node_face_direction(pos)
-    local node0_pos = electricity.get_pos_relative(pos, {x=1,y=0,z=0}, face_vector, null)
-    local node1_pos = electricity.get_pos_relative(pos, {x=2,y=0,z=0}, face_vector, null)
+    local node0_pos = electricity.get_pos_relative(pos, {x=1,y=0,z=0}, face_vector, nil)
+    local node1_pos = electricity.get_pos_relative(pos, {x=2,y=0,z=0}, face_vector, nil)
     local node0 = minetest.get_node(node0_pos)
     local node1 = minetest.get_node(node1_pos)
 
@@ -973,6 +975,8 @@ function electricity.piston_off(pos, node)
         node1.name == "protector_mese:protect" or
         node1.name == "protector_mese:brazier_bronze" or
         node1.name == "protector_mese:brazier_gold" or
+        node1.name == "default:chest_locked_open" or
+        node1.name == "default:chest_open" or
         node1.name == "doors:door_steel_b_1" or
         node1.name == "doors:door_steel_t_1" or
         node1.name == "doors:door_steel_b_2" or
@@ -998,7 +1002,7 @@ function electricity.piston_off(pos, node)
 
     minetest.sound_play("piston_retract", {
         pos = pos,
-        max_hear_distance = 20,
+        max_hear_distance = 12,
         gain = 0.3,
     })
     minetest.check_for_falling(node1_pos)
@@ -1100,7 +1104,7 @@ piston_definition.on_rotate = function(pos, node, player, mode)
 end
 piston_definition.on_destruct = function(pos)
     local face_vector = electricity.get_node_face_direction(pos)
-    local node0_pos = electricity.get_pos_relative(pos, {x=1,y=0,z=0}, face_vector, null)
+    local node0_pos = electricity.get_pos_relative(pos, {x=1,y=0,z=0}, face_vector, nil)
     local node0_name = minetest.get_node(node0_pos).name
     -- make sure there actually is a pusher
 	if node0_name ~= "electricity:piston_pusher_sticky" then
@@ -1110,7 +1114,7 @@ piston_definition.on_destruct = function(pos)
     minetest.remove_node(node0_pos)
 	minetest.sound_play("piston_retract", {
 		pos = pos,
-		max_hear_distance = 20,
+		max_hear_distance = 12,
 		gain = 0.3,
 	})
 end
@@ -1234,6 +1238,8 @@ function electricity.piston2_on(pos, node)
         node0.name == "protector_mese:protect" or
         node0.name == "protector_mese:brazier_bronze" or
         node0.name == "protector_mese:brazier_gold" or
+        node0.name == "default:chest_locked_open" or
+        node0.name == "default:chest_open" or
         node0.name == "doors:door_steel_b_1" or
         node0.name == "doors:door_steel_t_1" or
         node0.name == "doors:door_steel_b_2" or
@@ -1248,6 +1254,8 @@ function electricity.piston2_on(pos, node)
         node1.name == "protector_mese:protect" or
         node1.name == "protector_mese:brazier_bronze" or
         node1.name == "protector_mese:brazier_gold" or
+        node1.name == "default:chest_locked_open" or
+        node1.name == "default:chest_open" or
         node1.name == "doors:door_steel_b_1" or
         node1.name == "doors:door_steel_t_1" or
         node1.name == "doors:door_steel_b_2" or
@@ -1275,7 +1283,7 @@ function electricity.piston2_on(pos, node)
         objects_to_move = electricity.get_move_objects(node2_pos, objects_near)
         electricity.move_objects(objects_to_move, node2_pos, node3_pos)
     elseif not electricity.node_replaceable(node0.name) and not electricity.node_replaceable(node1.name) and electricity.node_replaceable(node2.name) then
-        local node4_pos = electricity.get_pos_relative(pos, {x=5,y=0,z=0}, face_vector, null)
+        local node4_pos = electricity.get_pos_relative(pos, {x=5,y=0,z=0}, face_vector, nil)
         local node4 = minetest.get_node(node4_pos)
         if electricity.node_replaceable(node4.name) then
             local objects_near = minetest.get_objects_inside_radius(node2_pos, 3)
@@ -1314,7 +1322,7 @@ function electricity.piston2_on(pos, node)
 
 	minetest.sound_play("piston_extend", {
 		pos = pos,
-		max_hear_distance = 20,
+		max_hear_distance = 12,
 		gain = 0.3,
 	})
 
@@ -1407,7 +1415,7 @@ function electricity.piston2_off(pos, node)
 
     minetest.sound_play("piston_retract", {
         pos = pos,
-        max_hear_distance = 20,
+        max_hear_distance = 12,
         gain = 0.3,
     })
     minetest.check_for_falling(node1_pos)
@@ -1501,9 +1509,9 @@ piston2_definition.on_rotate = function(pos, node, player, mode)
 end
 piston2_definition.on_destruct = function(pos)
     local face_vector = electricity.get_node_face_direction(pos)
-    local node0_pos = electricity.get_pos_relative(pos, {x=1,y=0,z=0}, face_vector, null)
+    local node0_pos = electricity.get_pos_relative(pos, {x=1,y=0,z=0}, face_vector, nil)
     local node0_name = minetest.get_node(node0_pos).name
-    local node1_pos = electricity.get_pos_relative(pos, {x=2,y=0,z=0}, face_vector, null)
+    local node1_pos = electricity.get_pos_relative(pos, {x=2,y=0,z=0}, face_vector, nil)
     local node1_name = minetest.get_node(node1_pos).name
     -- make sure there actually is a pusher
 	if node0_name ~= "electricity:piston_pusher_part" then
@@ -1517,7 +1525,7 @@ piston2_definition.on_destruct = function(pos)
 
 	minetest.sound_play("piston_retract", {
 		pos = pos,
-		max_hear_distance = 20,
+		max_hear_distance = 12,
 		gain = 0.3,
 	})
 end
