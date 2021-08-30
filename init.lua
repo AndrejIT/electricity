@@ -551,7 +551,7 @@ function electricity.solar_on_timer(self_pos, elapsed)
 end
 
 local solar_definition_base = {
-    description = "Electricity solar panel",
+    description = "Electricity solar panel (put array of solar panels under the sun to get stable electricity source)",
     inventory_image = "jeija_solar_panel.png",
     wield_image = "jeija_solar_panel.png",
     tiles = {"jeija_solar_panel.png","jeija_solar_panel.png","jeija_solar_panel.png"},
@@ -1029,7 +1029,7 @@ local piston_on_box = {
 }
 
 local piston_definition_base = {
-    description = "Electricity piston", -- sticky, 1 node long, also works as activator.
+    description = "Electricity piston (move node)", -- sticky, 1 node long, also works as activator.
     drop = "electricity:piston_off",
     tiles = {
 		"mesecons_piston_top.png",
@@ -1434,7 +1434,7 @@ local piston_pusher_part_box = {
 }
 
 local piston2_definition_base = {
-    description = "Electricity piston x2", -- sticky, 1 node long, also works as activator.
+    description = "Electricity piston x2 (move 2 nodes)", -- sticky, 1 node long, also works as activator.
     drop = "electricity:piston2_off",
     tiles = {
 		"mesecons_piston_top.png",
@@ -1580,7 +1580,7 @@ local torch_selectionbox = {
 }
 
 local torch_definition_base = {
-    description = "Electricity torch",
+    description = "Electricity torch (protector)",
     drop = "electricity:torch_off",
     inventory_image = "jeija_torches_off.png",
     tiles = {"torch_off.png","torch_off.png","torch_off.png"},
