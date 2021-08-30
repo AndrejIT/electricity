@@ -11,13 +11,47 @@ function electricity.get_node_face_direction(pos)
 
     local face_vector = nil
     if node_reg.paramtype2 == "wallmounted" then
-        face_vector = vector.multiply(minetest.wallmounted_to_dir(node.param2), -1)
+        -- face_vector = vector.multiply(minetest.wallmounted_to_dir(node.param2), -1)
+        local param2_n = node.param2 % 8
+        face_vector = ({[0]={x=0, y=-1, z=0}, [1]={x=0, y=1, z=0}, [2]={x=-1, y=0, z=0}, [3]={x=1, y=0, z=0}, [4]={x=0, y=0, z=-1}, [5]={x=0, y=0, z=1}, [6]={x=0, y=-1, z=0}, [7]={x=0, y=-1, z=0}})[param2_n]
     elseif node_reg.paramtype2 == "facedir" then
-        face_vector = vector.multiply(minetest.facedir_to_dir(node.param2), -1)
+        -- face_vector = vector.multiply(minetest.facedir_to_dir(node.param2), -1)
+        local param2_n = math.floor((node.param2 % 24)/4)
+        local param2_m = node.param2 % 4 -- division remainder
+
+        face_vector = ({
+            [0] = {[0]={x=0,  y=0, z=-1}, [1]={x=0, y=1, z=0},  [2]={x=0, y=-1, z=0}, [3]={x=0, y=0, z=-1}, [4]={x=0, y=0, z=-1}, [5]={x=0, y=0, z=-1}},
+            [1] = {[0]={x=-1, y=0, z=0},  [1]={x=-1, y=0, z=0}, [2]={x=1, y=0, z=0},  [3]={x=0, y=1, z=0}, [4]={x=0, y=-1, z=0},  [5]={x=-1, y=0, z=0}},
+            [2] = {[0]={x=0,  y=0, z=1},  [1]={x=0, y=-1, z=0}, [2]={x=0, y=1, z=0},  [3]={x=0, y=0, z=1},  [4]={x=0, y=0, z=1},  [5]={x=0, y=0, z=1}},
+            [3] = {[0]={x=1,  y=0, z=0},  [1]={x=1, y=0, z=0},  [2]={x=-1, y=0, z=0}, [3]={x=0, y=-1, z=0},  [4]={x=0, y=1, z=0}, [5]={x=1, y=0, z=0}},
+        })[param2_m][param2_n]
     else
         face_vector = vector.new(1,0,0)
     end
     return face_vector
+end
+
+-- Get node down direction, DEBUG - from face vector
+function electricity.get_node_down_direction(pos, face_vector)
+    local node = minetest.get_node(pos)
+    local node_reg = minetest.registered_nodes[node.name]
+
+    local down_vector = nil
+    if node_reg.paramtype2 == "wallmounted" then
+        local param2_n = node.param2 % 8
+        top_vector = ({[0]={x=0, y=0, z=-1}, [1]={x=0, y=0, z=-1}, [2]={x=0, y=-1, z=0}, [3]={x=0, y=-1, z=0}, [4]={x=0, y=-1, z=0}, [5]={x=0, y=-1, z=0}, [6]={x=0, y=0, z=1}, [7]={x=0, y=0, z=1}})[param2_n]
+        down_vector = vector.multiply(top_vector, -1)
+    elseif node_reg.paramtype2 == "facedir" then
+        local param2_n = math.floor((node.param2 % 24)/4)
+        local top_vector = ({[0]={x=0, y=1, z=0}, [1]={x=0, y=0, z=1}, [2]={x=0, y=0, z=-1}, [3]={x=1, y=0, z=0}, [4]={x=-1, y=0, z=0}, [5]={x=0, y=-1, z=0}})[param2_n]
+        down_vector = vector.multiply(top_vector, -1)
+    else
+        down_vector = vector.new(0,-1,0)
+    end
+
+    local facedir = node.param2
+
+    return down_vector
 end
 
 -- check if first rule connects to pos
@@ -30,7 +64,7 @@ function electricity.check_relative_rule(self_pos, to_pos)
     then
         local allrules = node_reg.electricity.rules
         local face_vector = electricity.get_node_face_direction(self_pos)
-        local down_vector = nil
+        local down_vector = electricity.get_node_down_direction(self_pos, face_vector)
         if allrules[1] and allrules[1].x then
             for _, rule in ipairs(allrules) do
                 if vector.equals(electricity.get_pos_relative(self_pos, rule, face_vector, down_vector), to_pos) then
@@ -80,7 +114,7 @@ function electricity.get_connected_pos(self_pos)
     then
         local allrules = node_reg.electricity.rules
         local face_vector = electricity.get_node_face_direction(self_pos)
-        local down_vector = nil
+        local down_vector = electricity.get_node_down_direction(self_pos, face_vector)
         local connected_pos_list = {}
         if allrules[1] and allrules[1].x then
             for _, rule in ipairs(allrules) do
@@ -194,8 +228,10 @@ function electricity.get_pos_relative(position, rel_pos, face_vector, down_vecto
         end
     end
 
+local node = minetest.get_node(position)
+
     assert(vector.length(down_vector) == 1, "Incorrect down vector")
-    assert(vector.length(vector.multiply(face_vector, down_vector)) == 0, "Down vector incompatible with face vector")
+    assert(vector.length(vector.multiply(face_vector, down_vector)) == 0, "Down vector ".."x"..down_vector.x.."y"..down_vector.y.."z"..down_vector.z.." incompatible with face vector ".."x"..face_vector.x.."y"..face_vector.y.."z"..face_vector.z.."  "..node.name.." "..node.param2)
 
     if rel_pos.x == 0 and rel_pos.y == 0 and rel_pos.z == 0 then
         return {x=pos.x, y=pos.y, z=pos.z}

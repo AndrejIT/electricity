@@ -189,9 +189,9 @@ wire_bend_definition.node_box = {
 }
 wire_bend_definition.electricity = {
     rules = {
-        {x=1,y=0,z=0},
-        {x=0,y=0,z=-1},
-        {x=0,y=-1,z=0},
+        {x=1,y=0,z=0},  -- front
+        {x=0,y=0,z=-1}, -- right
+        {x=0,y=-1,z=0}, -- bottom
     },
     name_on = "electricity:wire_bend_on",
     name_off = "electricity:wire_bend_off",
@@ -218,10 +218,10 @@ wire_corner_definition.node_box = {
 }
 wire_corner_definition.electricity = {
     rules = {
-        {x=1,y=0,z=0},
-        {x=-1,y=0,z=0},
-        {x=0,y=1,z=0},
-        {x=0,y=-1,z=0},
+        {x=1,y=0,z=0},  -- front
+        {x=-1,y=0,z=0}, -- back
+        {x=0,y=1,z=0},  -- top
+        {x=0,y=-1,z=0}, -- bottom
     },
     name_on = "electricity:wire_corner_on",
     name_off = "electricity:wire_corner_off",
@@ -248,10 +248,10 @@ wire_branch_definition.node_box = {
 }
 wire_branch_definition.electricity = {
     rules = {
-        {x=1,y=0,z=0},
-        {x=0,y=0,z=-1},
-        {x=0,y=0,z=1},
-        {x=0,y=-1,z=0},
+        {x=1,y=0,z=0},  -- front
+        {x=0,y=0,z=-1}, -- right
+        {x=0,y=0,z=1},  -- left
+        {x=0,y=-1,z=0}, -- bottom
     },
     name_on = "electricity:wire_branch_on",
     name_off = "electricity:wire_branch_off",
@@ -690,8 +690,9 @@ function electricity.transistor_on_timer(self_pos, elapsed)
         node_reg.electricity.name_enabled
     then
         local face_vector = electricity.get_node_face_direction(self_pos)
+        local down_vector = electricity.get_node_down_direction(self_pos)
 
-    	local base_pos = electricity.get_pos_relative(self_pos, {x=0, y=0, z=-1}, face_vector)
+    	local base_pos = electricity.get_pos_relative(self_pos, {x=0, y=0, z=-1}, face_vector, down_vector)
         local h = minetest.hash_node_position(base_pos)
         local volt = 0
         if electricity.rdata[h] ~= nil then
@@ -719,8 +720,9 @@ function electricity.transistor_nc_on_timer(self_pos, elapsed)
         node_reg.electricity.name_enabled
     then
         local face_vector = electricity.get_node_face_direction(self_pos)
+        local down_vector = electricity.get_node_down_direction(self_pos)
 
-    	local base_pos = electricity.get_pos_relative(self_pos, {x=0, y=0, z=-1}, face_vector)
+    	local base_pos = electricity.get_pos_relative(self_pos, {x=0, y=0, z=-1}, face_vector, down_vector)
         local h = minetest.hash_node_position(base_pos)
         local volt = 0
         if electricity.rdata[h] ~= nil then
