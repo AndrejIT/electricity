@@ -39,7 +39,7 @@ function electricity.get_node_down_direction(pos, face_vector)
     local down_vector = nil
     if node_reg.paramtype2 == "wallmounted" then
         local param2_n = node.param2 % 8
-        top_vector = ({[0]={x=0, y=0, z=-1}, [1]={x=0, y=0, z=-1}, [2]={x=0, y=-1, z=0}, [3]={x=0, y=-1, z=0}, [4]={x=0, y=-1, z=0}, [5]={x=0, y=-1, z=0}, [6]={x=0, y=0, z=1}, [7]={x=0, y=0, z=1}})[param2_n]
+        local top_vector = ({[0]={x=0, y=0, z=-1}, [1]={x=0, y=0, z=-1}, [2]={x=0, y=-1, z=0}, [3]={x=0, y=-1, z=0}, [4]={x=0, y=-1, z=0}, [5]={x=0, y=-1, z=0}, [6]={x=0, y=0, z=1}, [7]={x=0, y=0, z=1}})[param2_n]
         down_vector = vector.multiply(top_vector, -1)
     elseif node_reg.paramtype2 == "facedir" then
         local param2_n = math.floor((node.param2 % 24)/4)
