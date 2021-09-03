@@ -756,8 +756,9 @@ local transistor_definition_base = {
     	type = "fixed",
     	fixed = {{-8/16, -8/16, -8/16, 8/16, -7/16, 8/16 }},
     },
-    tiles = {"electricity_transistor.png^".."jeija_gate_off.png^"..
-        "electricity_transistor.png"},
+    tiles = {"electricity_transistor.png^".."jeija_gate_off.png^".."electricity_transistor.png",
+            "electricity_transistor.png^".."jeija_gate_off.png^".."electricity_transistor.png",
+            "electricity_gate_side.png", "electricity_gate_side_off.png", "electricity_gate_side_off.png", "electricity_gate_side_off.png"},
     paramtype = "light",
     paramtype2 = "facedir",
     is_ground_content = false,
@@ -792,8 +793,9 @@ local transistor_definition_base = {
 local transistor_definition = table.copy(transistor_definition_base)
 minetest.register_node("electricity:transistor_off", transistor_definition)
 transistor_definition = table.copy(transistor_definition)
-transistor_definition.tiles = {"electricity_transistor.png^".."jeija_gate_on.png^"..
-    "electricity_transistor.png"}
+transistor_definition.tiles = {"electricity_transistor.png^".."jeija_gate_on.png^".."electricity_transistor.png",
+    "electricity_transistor.png^".."jeija_gate_on.png^".."electricity_transistor.png",
+    "electricity_gate_side.png", "electricity_gate_side_on.png", "electricity_gate_side_on.png", "electricity_gate_side_on.png"}
 transistor_definition.groups["not_in_creative_inventory"] = 1
 transistor_definition.electricity.rules = {
     {x=-1,y=0,z=0},
@@ -811,14 +813,16 @@ transistor_definition.on_timer = function(pos, elapsed)
     electricity.transistor_nc_on_timer(pos, elapsed)
     return true
 end
-transistor_definition.tiles = {"electricity_transistor_nc.png^".."jeija_gate_off.png^"..
-    "electricity_transistor_nc.png"}
+transistor_definition.tiles = {"electricity_transistor_nc.png^".."jeija_gate_off.png^".."electricity_transistor_nc.png",
+    "electricity_transistor_nc.png^".."jeija_gate_off.png^".."electricity_transistor_nc.png",
+    "electricity_gate_side.png", "electricity_gate_side_off.png", "electricity_gate_side_off.png", "electricity_gate_side_off.png"}
 transistor_definition.electricity.name_enabled = "electricity:transistor_nc_on"
 transistor_definition.electricity.name_disabled = "electricity:transistor_nc_off"
 minetest.register_node("electricity:transistor_nc_off", transistor_definition)
 transistor_definition = table.copy(transistor_definition)
-transistor_definition.tiles = {"electricity_transistor_nc.png^".."jeija_gate_on.png^"..
-    "electricity_transistor_nc.png"}
+transistor_definition.tiles = {"electricity_transistor_nc.png^".."jeija_gate_on.png^".."electricity_transistor_nc.png",
+    "electricity_transistor_nc.png^".."jeija_gate_on.png^".."electricity_transistor_nc.png",
+    "electricity_gate_side.png", "electricity_gate_side_on.png", "electricity_gate_side_on.png", "electricity_gate_side_on.png"}
 transistor_definition.groups["not_in_creative_inventory"] = 1
 transistor_definition.electricity.rules = {
     {x=-1,y=0,z=0},
