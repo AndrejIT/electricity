@@ -471,9 +471,9 @@ end
 local plate_definition_base = {
     description = "Electricity pressure plate",
     drop = "electricity:pressure_plate_off",
-    inventory_image = "jeija_pressure_plate_stone_inv.png",
-    wield_image = "jeija_pressure_plate_stone_wield.png",
-    tiles = {"jeija_pressure_plate_stone_off.png","jeija_pressure_plate_stone_off.png","jeija_pressure_plate_stone_off_edges.png"},
+    inventory_image = "electricity_pressure_plate_stone_inv.png",
+    wield_image = "electricity_pressure_plate_stone_wield.png",
+    tiles = {"jeija_pressure_plate_stone_off.png","jeija_pressure_plate_stone_off.png","electricity_pressure_plate_stone_off_edges.png"},
     paramtype = "light",
     drawtype = "nodebox",
 	node_box = {
@@ -510,7 +510,7 @@ local plate_definition_base = {
 local plate_definition = table.copy(plate_definition_base)
 minetest.register_node("electricity:pressure_plate_off", plate_definition)
 plate_definition = table.copy(plate_definition)
-plate_definition.tiles = {"jeija_pressure_plate_stone_on.png","jeija_pressure_plate_stone_on.png","jeija_pressure_plate_stone_on_edges.png"}
+plate_definition.tiles = {"jeija_pressure_plate_stone_on.png","jeija_pressure_plate_stone_on.png","electricity_pressure_plate_stone_on_edges.png"}
 plate_definition.node_box.fixed = { -0.5, -0.5, -0.5, 0.5, -7.5/16, 0.5 }
 plate_definition.electricity.rules = {
     {x=0,y=-1,z=0},  -- bottom :|
@@ -756,8 +756,8 @@ local transistor_definition_base = {
     	type = "fixed",
     	fixed = {{-8/16, -8/16, -8/16, 8/16, -7/16, 8/16 }},
     },
-    tiles = {"electricity_transistor.png^".."jeija_gate_off.png^".."electricity_transistor.png",
-            "electricity_transistor.png^".."jeija_gate_off.png^".."electricity_transistor.png",
+    tiles = {"electricity_transistor.png^".."electricity_gate_off.png^".."electricity_transistor.png",
+            "electricity_transistor.png^".."electricity_gate_off.png^".."electricity_transistor.png",
             "electricity_gate_side.png", "electricity_gate_side_off.png", "electricity_gate_side_off.png", "electricity_gate_side_off.png"},
     paramtype = "light",
     paramtype2 = "facedir",
@@ -813,8 +813,8 @@ transistor_definition.on_timer = function(pos, elapsed)
     electricity.transistor_nc_on_timer(pos, elapsed)
     return true
 end
-transistor_definition.tiles = {"electricity_transistor_nc.png^".."jeija_gate_off.png^".."electricity_transistor_nc.png",
-    "electricity_transistor_nc.png^".."jeija_gate_off.png^".."electricity_transistor_nc.png",
+transistor_definition.tiles = {"electricity_transistor_nc.png^".."electricity_gate_off.png^".."electricity_transistor_nc.png",
+    "electricity_transistor_nc.png^".."electricity_gate_off.png^".."electricity_transistor_nc.png",
     "electricity_gate_side.png", "electricity_gate_side_off.png", "electricity_gate_side_off.png", "electricity_gate_side_off.png"}
 transistor_definition.electricity.name_enabled = "electricity:transistor_nc_on"
 transistor_definition.electricity.name_disabled = "electricity:transistor_nc_off"
@@ -1038,11 +1038,11 @@ local piston_definition_base = {
     description = "Electricity piston (move node)", -- sticky, 1 node long, also works as activator.
     drop = "electricity:piston_off",
     tiles = {
-		"mesecons_piston_top.png",
-		"mesecons_piston_bottom.png",
-		"mesecons_piston_left.png",
-		"mesecons_piston_right.png",
-		"mesecons_piston_back.png",
+		"electricity_piston_top.png",
+		"electricity_piston_bottom.png",
+		"electricity_piston_left.png",
+		"electricity_piston_right.png",
+		"electricity_piston_back.png",
 		"mesecons_piston_pusher_front_sticky.png"
 	},
     paramtype2 = "facedir",
@@ -1087,11 +1087,11 @@ minetest.register_node("electricity:piston_off", piston_definition)
 piston_definition = table.copy(piston_definition)
 piston_definition.drawtype = "nodebox"
 piston_definition.tiles = {
-    "mesecons_piston_top.png",
-    "mesecons_piston_bottom.png",
-    "mesecons_piston_left.png",
-    "mesecons_piston_right.png",
-    "mesecons_piston_back.png",
+    "electricity_piston_top.png",
+    "electricity_piston_bottom.png",
+    "electricity_piston_left.png",
+    "electricity_piston_right.png",
+    "electricity_piston_back.png",
     "mesecons_piston_on_front.png"
 }
 piston_definition.node_box = piston_on_box
@@ -1443,11 +1443,11 @@ local piston2_definition_base = {
     description = "Electricity piston x2 (move 2 nodes)", -- sticky, 1 node long, also works as activator.
     drop = "electricity:piston2_off",
     tiles = {
-		"mesecons_piston_top.png",
-		"mesecons_piston_bottom.png",
-		"mesecons_piston_left.png",
-		"mesecons_piston_right.png",
-		"mesecons_piston_back.png",
+		"electricity_piston_top.png",
+		"electricity_piston_bottom.png",
+		"electricity_piston_left.png",
+		"electricity_piston_right.png",
+		"electricity_piston_back.png",
 		"mesecons_piston_pusher_front_sticky.png"
 	},
     paramtype2 = "facedir",
@@ -1492,11 +1492,11 @@ minetest.register_node("electricity:piston2_off", piston2_definition)
 piston2_definition = table.copy(piston2_definition)
 piston2_definition.drawtype = "nodebox"
 piston2_definition.tiles = {
-    "mesecons_piston_top.png",
-    "mesecons_piston_bottom.png",
-    "mesecons_piston_left.png",
-    "mesecons_piston_right.png",
-    "mesecons_piston_back.png",
+    "electricity_piston_top.png",
+    "electricity_piston_bottom.png",
+    "electricity_piston_left.png",
+    "electricity_piston_right.png",
+    "electricity_piston_back.png",
     "mesecons_piston_on_front.png"
 }
 piston2_definition.node_box = piston_on_box
