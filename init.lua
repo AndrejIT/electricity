@@ -745,8 +745,8 @@ end
 local transistor_definition_base = {
     description = "Electricity transistor",
     drop = "electricity:transistor_off",
-    inventory_image = "electricity_transistor.png",
-    wield_image = "electricity_transistor.png",
+    inventory_image = "electricity_transistor_inv.png",
+    wield_image = "electricity_transistor_inv.png",
     drawtype = "nodebox",
     selection_box = {
     	type = "fixed",
@@ -807,8 +807,8 @@ minetest.register_node("electricity:transistor_on", transistor_definition)
 -- Normally Closed
 local transistor_definition = table.copy(transistor_definition_base)
 transistor_definition.description = "Electricity transistor (Normally Closed)"
-transistor_definition.inventory_image = "electricity_transistor_nc.png"
-transistor_definition.wield_image = "electricity_transistor_nc.png"
+transistor_definition.inventory_image = "electricity_transistor_nc_inv.png"
+transistor_definition.wield_image = "electricity_transistor_nc_inv.png"
 transistor_definition.on_timer = function(pos, elapsed)
     electricity.transistor_nc_on_timer(pos, elapsed)
     return true
@@ -1445,7 +1445,7 @@ local piston2_definition_base = {
     tiles = {
 		"electricity_piston_top.png",
 		"electricity_piston_bottom.png",
-		"electricity_piston_left.png",
+		"electricity_piston2_left.png",
 		"electricity_piston_right.png",
 		"electricity_piston_back.png",
 		"mesecons_piston_pusher_front_sticky.png"
@@ -1494,7 +1494,7 @@ piston2_definition.drawtype = "nodebox"
 piston2_definition.tiles = {
     "electricity_piston_top.png",
     "electricity_piston_bottom.png",
-    "electricity_piston_left.png",
+    "electricity_piston2_left.png",
     "electricity_piston_right.png",
     "electricity_piston_back.png",
     "mesecons_piston_on_front.png"
