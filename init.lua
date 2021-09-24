@@ -372,6 +372,51 @@ wire_half_definition.tiles = {"electricity_wire_on.png"}
 wire_half_definition.groups["not_in_creative_inventory"] = 1
 minetest.register_node("electricity:wire_half_on", wire_half_definition)
 
+-- WIRE IN STONE --
+local stone_with_wire_definition = table.copy(wire_definition_base)
+stone_with_wire_definition.description = "Electricity wire in stone"
+stone_with_wire_definition.drop = "electricity:wire_off"
+stone_with_wire_definition.tiles = {
+	"default_stone.png",
+	"default_stone.png",
+	"default_stone.png",
+	"default_stone.png",
+	"electricity_stone_with_wire_off.png",
+	"electricity_stone_with_wire_off.png"
+}
+
+stone_with_wire_definition.inventory_image = nil
+stone_with_wire_definition.wield_image = nil
+
+stone_with_wire_definition.sounds = default.node_sound_stone_defaults()
+stone_with_wire_definition.paramtype = nil
+stone_with_wire_definition.drawtype = nil
+stone_with_wire_definition.node_box = nil
+stone_with_wire_definition.sunlight_propagates = false
+stone_with_wire_definition.walkable = true
+stone_with_wire_definition.groups = {electricity = 1, electricity_conductor = 1, cracky = 3}
+
+stone_with_wire_definition.electricity = {
+    rules = {
+        {x=1,y=0,z=0},
+        {x=-1,y=0,z=0},
+    },
+    name_on = "electricity:stone_with_wire_on",
+    name_off = "electricity:stone_with_wire_off",
+}
+minetest.register_node("electricity:stone_with_wire_off", stone_with_wire_definition)
+stone_with_wire_definition = table.copy(stone_with_wire_definition)
+stone_with_wire_definition.tiles = {
+	"default_stone.png",
+	"default_stone.png",
+	"default_stone.png",
+	"default_stone.png",
+	"electricity_stone_with_wire_on.png",
+	"electricity_stone_with_wire_on.png"
+}
+stone_with_wire_definition.groups["not_in_creative_inventory"] = 1
+minetest.register_node("electricity:stone_with_wire_on", stone_with_wire_definition)
+
 
 -- LAMP --
 function electricity.lamp_on_timer(self_pos, elapsed)
@@ -1758,6 +1803,12 @@ minetest.register_craft({
     type = "shapeless",
 	output = "electricity:wire_off",
 	recipe = {"electricity:wire_corner_off"},
+})
+
+minetest.register_craft({
+    type = "shapeless",
+	output = "electricity:stone_with_wire_off",
+    recipe = {"electricity:wire_off", "default:stone"}
 })
 
 minetest.register_craft({
