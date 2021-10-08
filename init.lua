@@ -439,7 +439,7 @@ end
 local lamp_definition_base = {
     description = "Electricity lamp",
     drop = "electricity:lamp_off",
-    inventory_image = "jeija_meselamp.png",
+    inventory_image = "electricity_lamp.png",
     wield_image = "jeija_meselamp.png",
     tiles = {"lamp_off.png","lamp_off.png","lamp_off.png"},
     paramtype = "light",
@@ -478,7 +478,7 @@ local lamp_definition_base = {
         name_on = "electricity:lamp_on",
         name_off = "electricity:lamp_off",
     },
-    groups = {electricity = 1, electricity_consumer = 1, cracky = 3, oddly_breakable_by_hand = 3},
+    groups = {electricity = 1, electricity_consumer = 1, electricity_lamp = 1, cracky = 3, oddly_breakable_by_hand = 3},
     sounds = default.node_sound_stone_defaults(),
 }
 
@@ -489,6 +489,58 @@ lamp_definition.light_source = minetest.LIGHT_MAX
 lamp_definition.tiles = {"lamp_on.png","lamp_on.png","lamp_on.png"}
 lamp_definition.groups["not_in_creative_inventory"] = 1
 minetest.register_node("electricity:lamp_on", lamp_definition)
+
+-- All colored lamps only one connection
+lamp_definition_base.electricity.rules = {
+    {x=-1,y=0,z=0}, -- bottom
+};
+
+-- LAMP RED --
+local lamp_red_definition = table.copy(lamp_definition_base)
+lamp_red_definition.description = "Electricity lamp red";
+lamp_red_definition.drop = "electricity:lamp_red_off";
+lamp_red_definition.inventory_image = "electricity_lamp_red.png";
+-- lamp_red_definition.wield_image = "jeija_meselamp.png";
+-- lamp_red_definition.tiles = {"lamp_off.png","lamp_off.png","lamp_off.png"};
+lamp_red_definition.electricity.name_on = "electricity:lamp_red_on";
+lamp_red_definition.electricity.name_off = "electricity:lamp_red_off";
+minetest.register_node("electricity:lamp_red_off", lamp_red_definition)
+
+lamp_red_definition = table.copy(lamp_red_definition)
+lamp_red_definition.light_source = minetest.LIGHT_MAX
+lamp_red_definition.tiles = {"lamp_red_on.png","lamp_red_on.png","lamp_red_on.png"}
+lamp_red_definition.groups["not_in_creative_inventory"] = 1
+minetest.register_node("electricity:lamp_red_on", lamp_red_definition)
+
+-- LAMP GREEN --
+local lamp_green_definition = table.copy(lamp_definition_base)
+lamp_green_definition.description = "Electricity lamp green";
+lamp_green_definition.drop = "electricity:lamp_green_off";
+lamp_green_definition.inventory_image = "electricity_lamp_green.png";
+lamp_green_definition.electricity.name_on = "electricity:lamp_green_on";
+lamp_green_definition.electricity.name_off = "electricity:lamp_green_off";
+minetest.register_node("electricity:lamp_green_off", lamp_green_definition)
+
+lamp_green_definition = table.copy(lamp_green_definition)
+lamp_green_definition.light_source = minetest.LIGHT_MAX
+lamp_green_definition.tiles = {"lamp_green_on.png","lamp_green_on.png","lamp_green_on.png"}
+lamp_green_definition.groups["not_in_creative_inventory"] = 1
+minetest.register_node("electricity:lamp_green_on", lamp_green_definition)
+
+-- LAMP BLUE --
+local lamp_blue_definition = table.copy(lamp_definition_base)
+lamp_blue_definition.description = "Electricity lamp blue";
+lamp_blue_definition.drop = "electricity:lamp_blue_off";
+lamp_blue_definition.inventory_image = "electricity_lamp_blue.png";
+lamp_blue_definition.electricity.name_on = "electricity:lamp_blue_on";
+lamp_blue_definition.electricity.name_off = "electricity:lamp_blue_off";
+minetest.register_node("electricity:lamp_blue_off", lamp_blue_definition)
+
+lamp_blue_definition = table.copy(lamp_blue_definition)
+lamp_blue_definition.light_source = minetest.LIGHT_MAX
+lamp_blue_definition.tiles = {"lamp_blue_on.png","lamp_blue_on.png","lamp_blue_on.png"}
+lamp_blue_definition.groups["not_in_creative_inventory"] = 1
+minetest.register_node("electricity:lamp_blue_on", lamp_blue_definition)
 
 -- PRESSURE PLATE --
 function electricity.plate_on_timer(self_pos, elapsed)
@@ -1836,6 +1888,30 @@ minetest.register_craft({
 		{"electricity:wire_off", "default:steel_ingot", "electricity:wire_off"},
 		{"", "default:obsidian_glass", ""}
 	},
+})
+
+minetest.register_craft({
+    type = "shapeless",
+	output = "electricity:lamp_red_off",
+    recipe = {"group:electricity_lamp", "dye:red"}
+})
+
+minetest.register_craft({
+    type = "shapeless",
+	output = "electricity:lamp_green_off",
+    recipe = {"group:electricity_lamp", "dye:green"}
+})
+
+minetest.register_craft({
+    type = "shapeless",
+	output = "electricity:lamp_blue_off",
+    recipe = {"group:electricity_lamp", "dye:blue"}
+})
+
+minetest.register_craft({
+    type = "shapeless",
+	output = "electricity:lamp_off",
+    recipe = {"group:electricity_lamp", "dye:white"}
 })
 
 minetest.register_craft({
