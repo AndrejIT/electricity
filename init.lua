@@ -1894,6 +1894,162 @@ end
 
 minetest.register_node('electricity:echest_open', echest_open_definition)
 
+-- BIOMETRICS --
+function electricity:biometrics_on_rightclick(self_pos, node, clicker)
+
+    local meta = minetest.get_meta(self_pos)
+    local owner_name = meta:get_string("owner")
+    local player_name = clicker:get_player_name()
+
+    local has_access = false
+    if owner_name == player_name then
+        has_access = true
+    end
+
+    local node_reg = minetest.registered_nodes[node.name]
+    if
+        has_access and (
+            node.name == node_reg.electricity.name_disabled or
+            node.name == node_reg.electricity.name_disabled2
+        )
+    then
+        node.name = node_reg.electricity.name_enabled
+        minetest.swap_node(self_pos, node)
+        minetest.sound_play("mesecons_lever", {
+            pos = self_pos,
+            max_hear_distance = 6,
+            gain = 10.0,
+        })
+    elseif has_access and node.name == node_reg.electricity.name_enabled then
+        node.name = node_reg.electricity.name_disabled
+        minetest.swap_node(self_pos, node)
+        minetest.sound_play("mesecons_lever", {
+            pos = self_pos,
+            max_hear_distance = 6,
+            gain = 10.0,
+        })
+    elseif
+        node.name == node_reg.electricity.name_disabled
+    then
+        node.name = node_reg.electricity.name_disabled2
+        minetest.swap_node(self_pos, node)
+        minetest.sound_play("piston_extend", {
+            pos = self_pos,
+            max_hear_distance = 6,
+            gain = 10.0,
+        })
+    end
+end
+
+function electricity.biometrics_on_timer(self_pos, elapsed)
+    local node = minetest.get_node(self_pos)
+    local node_reg = minetest.registered_nodes[node.name]
+
+	local meta = minetest.get_meta(self_pos)
+	local reset = (meta:get_int("biometrics_reset") == 1)
+
+    if  node_reg and
+        node_reg.electricity
+    then
+        local volt = electricity.get(self_pos, self_pos)
+        if volt == 0 and (
+                node.name == node_reg.electricity.name_enabled or
+                node.name == node_reg.electricity.name_disabled2
+            )
+        then
+            if reset then
+                node.name = node_reg.electricity.name_disabled
+                minetest.swap_node(self_pos, node)
+                meta:set_int("biometrics_reset", 0)
+            else
+                meta:set_int("biometrics_reset", 1)
+            end
+        elseif reset then
+            meta:set_int("biometrics_reset", 0)
+        end
+    end
+end
+
+local biometrics_definition_base = {
+    description = "Electricity biometrics",
+    drop = "electricity:biometrics_off",
+    -- inventory_image = "electricity_stone_with_biometrics_off.png",
+    -- wield_image = "electricity_stone_with_biometrics_off.png",
+    tiles = {
+        "electricity_stone_with_wire_off.png",
+        "electricity_stone_with_wire_off.png",
+        "default_stone.png",
+        "default_stone.png",
+        "electricity_stone_with_wire_off.png",
+    	"electricity_stone_with_biometrics_off.png",
+	},
+    paramtype2 = "facedir",
+    is_ground_content = false,
+    on_timer = function(pos, elapsed)
+        electricity.biometrics_on_timer(pos, elapsed)
+        return true
+    end,
+	after_place_node = function(pos, placer)
+		local meta = minetest.get_meta(pos)
+		meta:set_string("owner", placer:get_player_name() or "")
+	end,
+    on_rightclick = function (pos, node, clicker)
+        electricity:biometrics_on_rightclick(pos, node, clicker)
+	end,
+    on_construct = function(pos)
+        local h = minetest.hash_node_position(pos)
+        electricity.not_producers[h] = pos
+        electricity.set(pos, pos, 0)
+        minetest.get_node_timer(pos):start(2)
+    end,
+    after_destruct = function(pos)
+        local h = minetest.hash_node_position(pos)
+        electricity.not_producers[h] = nil
+        electricity.rdata[h] = nil
+    end,
+    electricity = {
+        rules = {
+        },
+        name_enabled = "electricity:biometrics_on",
+        name_disabled = "electricity:biometrics_off",
+        name_disabled2 = "electricity:biometrics_denied_off",
+    },
+    groups = {electricity = 1, electricity_conductor = 1, cracky = 3},
+    sounds = default.node_sound_stone_defaults(),
+}
+
+biometrics_definition_off = table.copy(biometrics_definition_base)
+minetest.register_node('electricity:biometrics_off', biometrics_definition_off)
+
+biometrics_definition_denied_off = table.copy(biometrics_definition_base)
+biometrics_definition_denied_off.groups["not_in_creative_inventory"] = 1
+biometrics_definition_denied_off.tiles = {
+    "electricity_stone_with_wire_off.png",
+    "electricity_stone_with_wire_off.png",
+    "default_stone.png",
+    "default_stone.png",
+    "electricity_stone_with_wire_off.png",
+    "electricity_stone_with_biometrics_denied_off.png",
+}
+minetest.register_node('electricity:biometrics_denied_off', biometrics_definition_denied_off)
+
+biometrics_definition_on = table.copy(biometrics_definition_base)
+biometrics_definition_on.groups["not_in_creative_inventory"] = 1
+biometrics_definition_on.electricity.rules = {
+    {x=0,y=1,z=0},
+    {x=-1,y=0,z=0},
+    {x=0,y=-1,z=0},
+}
+biometrics_definition_on.tiles = {
+    "electricity_stone_with_wire_off.png",
+    "electricity_stone_with_wire_off.png",
+    "default_stone.png",
+    "default_stone.png",
+    "electricity_stone_with_wire_off.png",
+    "electricity_stone_with_biometrics_on.png",
+}
+minetest.register_node('electricity:biometrics_on', biometrics_definition_on)
+
 -- electric shock
 minetest.register_on_punchnode(function(pos, node, puncher, pointed_thing)
     if
@@ -2117,5 +2273,14 @@ minetest.register_craft({
         {"default:tin_ingot", "default:tin_ingot", "default:tin_ingot"},
 		{"default:tin_ingot", "electricity:wire_off", "default:tin_ingot"},
 		{"default:tin_ingot", "default:tin_ingot", "default:tin_ingot"}
+    }
+})
+
+minetest.register_craft({
+	output = "electricity:biometrics_off",
+	recipe = {
+        {"default:stone", "group:electricity_conductor", "default:stone"},
+		{"default:stone", "default:obsidian_glass", "default:stone"},
+		{"default:stone", "default:mese_crystal", "default:stone"}
     }
 })
