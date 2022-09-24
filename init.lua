@@ -1740,6 +1740,159 @@ torch_definition.tiles = {"jeija_torches_on.png", "jeija_torches_on_ceiling.png"
 torch_definition.groups["not_in_creative_inventory"] = 1
 minetest.register_node("electricity:torch_on", torch_definition)
 
+-- E-CHEST --
+function electricity.echest_on_timer(self_pos, elapsed)
+    local node = minetest.get_node(self_pos)
+    local node_reg = minetest.registered_nodes[node.name]
+    if  node_reg and
+        node_reg.electricity
+    then
+        local volt = electricity.get(self_pos, self_pos)
+        if volt == 1 and node.name == node_reg.electricity.name_off and not electricity.echest_lid_obstructed(self_pos) then
+            node.name = node_reg.electricity.name_on
+            minetest.swap_node(self_pos, node)
+            minetest.sound_play("mesecons_lever", {
+                pos = self_pos,
+                max_hear_distance = 7,
+                gain = 10.0,
+            })
+        elseif volt == 0 and node.name == node_reg.electricity.name_on then
+            node.name = node_reg.electricity.name_off
+            minetest.swap_node(self_pos, node)
+            minetest.sound_play("mesecons_lever", {
+                pos = self_pos,
+                max_hear_distance = 7,
+                gain = 10.0,
+            })
+        end
+    end
+end
+
+function electricity.echest_lid_obstructed(pos)
+	local above = {x = pos.x, y = pos.y + 1, z = pos.z}
+	local def = minetest.registered_nodes[minetest.get_node(above).name]
+	-- allow ladders, signs, wallmounted things and torches to not obstruct
+	if def and
+			(def.drawtype == "airlike" or
+			def.drawtype == "signlike" or
+			def.drawtype == "torchlike" or def.name == 'default:torch_wall' or
+			(def.drawtype == "nodebox" and def.paramtype2 == "wallmounted")) then
+		return false
+	end
+	return true
+end
+
+function electricity.get_echest_formspec(pos)
+	local spos = pos.x .. "," .. pos.y .. "," .. pos.z
+	local formspec =
+		"size[14,10]" ..
+		"list[nodemeta:" .. spos .. ";main;0,0;14,5;]" ..
+		"list[current_player;main;3,5.85;8,1;]" ..
+		"list[current_player;main;3,7.08;8,3;8]" ..
+		"listring[nodemeta:" .. spos .. ";main]" ..
+		"listring[current_player;main]" ..
+		default.get_hotbar_bg(3,5.85)
+	return formspec
+end
+
+local echest_definition_base = {
+    description = "Electricity chest",
+	tiles = {
+		"electricity_echest_top.png",
+		"electricity_echest_top.png",
+		"electricity_echest.png".."^[transformFX",
+		"electricity_echest.png",
+		"electricity_echest_back.png",
+		"electricity_echest_front.png",
+	},
+    paramtype2 = "facedir",
+	is_ground_content = false,
+    on_timer = function(pos, elapsed)
+        electricity.echest_on_timer(pos, elapsed)
+        return true
+    end,
+    electricity = {
+        rules = {
+            {x=-1,y=0,z=0},
+            {x=0,y=-1,z=0},
+        },
+        name_on = "electricity:echest_open",
+        name_off = "electricity:echest_closed",
+    },
+	groups = {cracky=1, level=3, electricity = 1, electricity_consumer = 1},
+	sounds = default.node_sound_stone_defaults(),
+    on_construct = function(pos)
+		local meta = minetest.get_meta(pos)
+        meta:set_string("infotext", "Electricity chest")
+		local inv = meta:get_inventory()
+		inv:set_size("main", 14*5)
+
+        local h = minetest.hash_node_position(pos)
+        electricity.not_producers[h] = pos
+        electricity.set(pos, pos, 0)
+        minetest.get_node_timer(pos):start(0.5)
+    end,
+    on_rightclick = function(pos, node, clicker, itemstack, pointed_thing)
+		return itemstack
+	end,
+    allow_metadata_inventory_move = function(pos, from_list, from_index, to_list, to_index, count, player)
+        return 0
+    end,
+    allow_metadata_inventory_put = function(pos, listname, index, stack, player)
+        return 0
+    end,
+    allow_metadata_inventory_take = function(pos, listname, index, stack, player)
+        return 0
+    end,
+    after_dig_node = function(pos, oldnode, oldmetadata, digger)
+        local meta = minetest.get_meta(pos)
+        meta:from_table(oldmetadata)
+        local inv = meta:get_inventory()
+        for i=1,inv:get_size("main") do
+            local stk = inv:get_stack("main", i)
+            minetest.add_item(pos, stk)
+        end
+    end,
+}
+
+echest_closed_definition = table.copy(echest_definition_base)
+minetest.register_node('electricity:echest_closed', echest_closed_definition)
+
+echest_open_definition = table.copy(echest_definition_base)
+
+echest_open_definition.tiles = {
+    {name = "electricity_echest_top.png", backface_culling = true},
+    {name = "electricity_echest_top.png", backface_culling = true},
+    {name = "electricity_echest.png", backface_culling = true},
+    {name = "electricity_echest_back.png", backface_culling = true},
+    {name = "electricity_echest_front.png", backface_culling = true},
+    {name = "electricity_echest_inside.png", backface_culling = true},
+}
+echest_open_definition.drawtype = "mesh"
+echest_open_definition.visual = "mesh"
+echest_open_definition.mesh = "chest_open.obj"
+echest_open_definition.selection_box = {
+    type = "fixed",
+    fixed = { -1/2, -1/2, -1/2, 1/2, 3/16, 1/2 },
+}
+echest_open_definition.groups.not_in_creative_inventory = 1
+echest_open_definition.drop = 'electricity:echest_closed'
+echest_open_definition.on_rightclick = function(pos, node, clicker, itemstack, pointed_thing)
+    minetest.after(0.2, minetest.show_formspec,
+        clicker:get_player_name(), "electricity:echest open", electricity.get_echest_formspec(pos)
+    )
+end
+echest_open_definition.allow_metadata_inventory_move = function(pos, from_list, from_index, to_list, to_index, count, player)
+    return count
+end
+echest_open_definition.allow_metadata_inventory_put = function(pos, listname, index, stack, player)
+    return stack:get_count()
+end
+echest_open_definition.allow_metadata_inventory_take = function(pos, listname, index, stack, player)
+    return stack:get_count()
+end
+
+minetest.register_node('electricity:echest_open', echest_open_definition)
 
 -- electric shock
 minetest.register_on_punchnode(function(pos, node, puncher, pointed_thing)
@@ -1955,5 +2108,14 @@ minetest.register_craft({
 	recipe = {
     	{"electricity:wire_off"},
     	{"default:stick"},
+    }
+})
+
+minetest.register_craft({
+	output = "electricity:echest_closed",
+	recipe = {
+        {"default:tin_ingot", "default:tin_ingot", "default:tin_ingot"},
+		{"default:tin_ingot", "electricity:wire_off", "default:tin_ingot"},
+		{"default:tin_ingot", "default:tin_ingot", "default:tin_ingot"}
     }
 })
