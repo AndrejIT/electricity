@@ -1906,6 +1906,10 @@ function electricity:biometrics_on_rightclick(self_pos, node, clicker)
         has_access = true
     end
 
+    if electricity.biometrics_is_member(meta, player_name) then
+        has_access = true
+    end
+
     local node_reg = minetest.registered_nodes[node.name]
     if
         has_access and (
@@ -1970,6 +1974,107 @@ function electricity.biometrics_on_timer(self_pos, elapsed)
     end
 end
 
+electricity.biometrics_get_member_list = function(meta)
+	local s = meta:get_string("members")
+	local list = s:split(" ")
+	return list
+end
+
+electricity.biometrics_set_member_list = function(meta, list)
+	meta:set_string("members", table.concat(list, " "))
+end
+
+electricity.biometrics_is_member = function (meta, name)
+	local list = electricity.biometrics_get_member_list(meta)
+	for _, n in ipairs(list) do
+		if n == name then
+			return true
+		end
+	end
+	return false
+end
+
+electricity.biometrics_add_member = function(meta, name)
+	name=string.sub(name, 1, 30)	--protection
+	if electricity.biometrics_is_member(meta, name) then return end
+	local list = electricity.biometrics_get_member_list(meta)
+	table.insert(list, name)
+	electricity.biometrics_set_member_list(meta, list)
+end
+
+electricity.biometrics_del_member = function(meta, name)
+	local list = electricity.biometrics_get_member_list(meta)
+	for i, n in ipairs(list) do
+		if n == name then
+			table.remove(list, i)
+			break
+		end
+	end
+	electricity.biometrics_set_member_list(meta, list)
+end
+
+electricity.biometrics_generate_formspec = function (meta)
+	local formspec = "size[8,8]"
+		.."label[0,0;-- biometrics interface --]"
+		.."label[0,2;Current members:]"
+	local members = electricity.biometrics_get_member_list(meta)
+
+	local npp = 15 -- names per page, for the moment is 4*4 (-1 for the + button)
+	--no pages. 15 members max
+	local i = 0
+	for _, member in ipairs(members) do
+		if i < 15 then
+			formspec = formspec .. "button["..(i%4*2)..","..math.floor(i/4+3)..";1.5,.5;electricity_biometrics_member;"..member.."]"
+			formspec = formspec .. "button["..(i%4*2+1.25)..","..math.floor(i/4+3)..";.75,.5;electricity_biometrics_del_member_"..member..";X]"
+		end
+		i = i +1
+	end
+	if i < npp then
+		formspec = formspec
+			.."field["..(i%4*2+1/3)..","..(math.floor(i/4+3)+1/3)..";1.433,.5;electricity_biometrics_add_member;;]"
+			.."button["..(i%4*2+1.25)..","..math.floor(i/4+3)..";.75,.5;electricity_biometrics_submit;+]"
+	end
+
+	formspec = formspec .. "button_exit[1,7;3,1;electricity_biometrics_close;CLOSE]"
+
+	return formspec
+end
+
+minetest.register_on_player_receive_fields(function(player, formname, fields)
+	if string.sub(formname, 0, string.len("electricity_biometrics_")) == "electricity_biometrics_" then
+		local pos_s = string.sub(formname,string.len("electricity_biometrics_")+1)
+		local pos = minetest.string_to_pos(pos_s)
+		local meta = minetest.get_meta(pos)
+
+        local owner_name = meta:get_string("owner")
+        local player_name = player:get_player_name()
+
+		if not player_name == owner_name then
+			return
+		end
+
+		if fields.electricity_biometrics_add_member then
+			for _, i in ipairs(fields.electricity_biometrics_add_member:split(" ")) do
+				electricity.biometrics_add_member(meta, i)
+			end
+		end
+		for field, value in pairs(fields) do
+			if string.sub(field,0,string.len("electricity_biometrics_del_member_"))=="electricity_biometrics_del_member_" then
+				electricity.biometrics_del_member(meta, string.sub(field,string.len("electricity_biometrics_del_member_")+1))
+			end
+		end
+		if fields.electricity_biometrics_close then
+			return
+		end
+		if not fields["quit"] then
+			minetest.show_formspec(
+				player_name, formname,
+				electricity.biometrics_generate_formspec(meta)
+			)
+		end
+	end
+end)
+
 local biometrics_definition_base = {
     description = "Electricity biometrics",
     drop = "electricity:biometrics_off",
@@ -1992,6 +2097,13 @@ local biometrics_definition_base = {
 	after_place_node = function(pos, placer)
 		local meta = minetest.get_meta(pos)
 		meta:set_string("owner", placer:get_player_name() or "")
+        meta:set_string("members", "")
+
+        minetest.after(
+            0.2,
+            minetest.show_formspec,
+            placer:get_player_name(), "electricity_biometrics_"..minetest.pos_to_string(pos), electricity.biometrics_generate_formspec(meta)
+        )
 	end,
     on_rightclick = function (pos, node, clicker)
         electricity:biometrics_on_rightclick(pos, node, clicker)
