@@ -2162,6 +2162,125 @@ biometrics_definition_on.tiles = {
 }
 minetest.register_node('electricity:biometrics_on', biometrics_definition_on)
 
+-- BATTERY --
+function electricity.battery_on_timer(self_pos, elapsed)
+	local node = minetest.get_node(self_pos)
+    local node_reg = minetest.registered_nodes[node.name]
+
+    local meta = minetest.get_meta(self_pos)
+    local wear = meta:get_int("wear")
+
+    wear = wear + 5
+
+    local itemname = node.name
+
+    if itemname == 'electricity:battery' and wear > (65535/4 * 1) then
+        node.name = 'electricity:battery_75'
+        minetest.swap_node(self_pos, node)
+    elseif itemname == 'electricity:battery_75' and wear > (65535/4 * 2) then
+        node.name = 'electricity:battery_50'
+        minetest.swap_node(self_pos, node)
+    elseif itemname == 'electricity:battery_50' and wear > (65535/4 * 3) then
+        node.name = 'electricity:battery_25'
+        minetest.swap_node(self_pos, node)
+    elseif itemname == 'electricity:battery_25' and wear > (65535/4 * 4) then
+        node.name = 'electricity:battery_depleted'
+        minetest.swap_node(self_pos, node)
+    end
+
+    if
+        node_reg and
+        node_reg.electricity and
+        node.name ~= 'electricity:battery_depleted'
+    then
+        meta:set_int("wear", wear)
+        electricity.set(self_pos, self_pos, 1)  -- produce electricity
+    else
+        electricity.set(self_pos, self_pos, 0)  -- no electricity
+        if wear > (65535 + 10) then
+            --explode
+        else
+            -- minetest.sound_play("tnt_ignite", {
+            --     pos = self_pos,
+            --     max_hear_distance = 12,
+            --     gain = 10.0,
+            -- })
+            meta:set_int("wear", wear)
+        end
+    end
+end
+
+local battery_definition_base = {
+    description = "Electricity battery.  DO NOT SHORT-CIRCUIT!  DO NOT RECHARGE!",
+    tiles = {"electricity_battery_top.png", "electricity_battery_bottom.png", "electricity_battery_side.png"},
+    is_ground_content = false,
+    on_timer = function(pos, elapsed)
+        electricity.battery_on_timer(pos, elapsed)
+        return true
+    end,
+    after_place_node = function(pos, placer, itemstack)
+        local wear = 0
+        local itemname = itemstack:get_name()
+        if itemname == 'electricity:battery_75' then
+            wear = 65535/4 * 1;
+        elseif itemname == 'electricity:battery_50' then
+            wear = 65535/4 * 2;
+        elseif itemname == 'electricity:battery_25' then
+            wear = 65535/4 * 3;
+        elseif itemname == 'electricity:battery_depleted' then
+            wear = 65535;
+        end
+
+        local meta = minetest.get_meta(pos)
+        meta:set_int("wear", wear)
+    end,
+    -- after_dig_node = function(pos, oldnode, oldmetadata, digger)
+    --
+    -- end,
+    on_construct = function(pos)
+        local h = minetest.hash_node_position(pos)
+        electricity.producers[h] = pos
+        electricity.set(pos, pos, 0)
+        minetest.get_node_timer(pos):start(5)
+    end,
+    after_destruct = function(pos)
+        local h = minetest.hash_node_position(pos)
+        electricity.producers[h] = nil
+        electricity.rdata[h] = nil
+    end,
+    electricity = {
+        rules = {
+            {x=0,y=1,z=0},
+        },
+        name_enabled = "electricity:battery",
+        name_disabled = "electricity:battery_depleted",
+    },
+    groups = {electricity = 1, electricity_producer = 1, cracky = 3, oddly_breakable_by_hand = 3},
+    sounds = default.node_sound_stone_defaults(),
+}
+
+local battery_definition = table.copy(battery_definition_base)
+minetest.register_node("electricity:battery", battery_definition)
+
+
+battery_definition_base.groups.not_in_creative_inventory = 1
+
+local battery_definition_75 = table.copy(battery_definition_base)
+battery_definition_75.tiles = {"electricity_battery_top.png", "electricity_battery_bottom.png", "electricity_battery_side_75.png"}
+minetest.register_node("electricity:battery_75", battery_definition_75)
+
+local battery_definition_50 = table.copy(battery_definition_base)
+battery_definition_50.tiles = {"electricity_battery_top.png", "electricity_battery_bottom.png", "electricity_battery_side_50.png"}
+minetest.register_node("electricity:battery_50", battery_definition_50)
+
+local battery_definition_25 = table.copy(battery_definition_base)
+battery_definition_25.tiles = {"electricity_battery_top.png", "electricity_battery_bottom.png", "electricity_battery_side_25.png"}
+minetest.register_node("electricity:battery_25", battery_definition_25)
+
+local battery_definition_depleted = table.copy(battery_definition_base)
+battery_definition_depleted.tiles = {"electricity_battery_top_depleted.png", "electricity_battery_bottom.png", "electricity_battery_side_depleted.png"}
+minetest.register_node("electricity:battery_depleted", battery_definition_depleted)
+
 -- electric shock
 minetest.register_on_punchnode(function(pos, node, puncher, pointed_thing)
     if
@@ -2394,5 +2513,14 @@ minetest.register_craft({
         {"default:stone", "group:electricity_conductor", "default:stone"},
 		{"default:stone", "default:obsidian_glass", "default:stone"},
 		{"default:stone", "default:mese_crystal", "default:stone"}
+    }
+})
+
+minetest.register_craft({
+	output = "electricity:battery",
+	recipe = {
+        {"default:copper_ingot", "electricity:wire_off", "default:copper_ingot"},
+		{"default:coal_lump", "default:coal_lump", "default:coal_lump"},
+		{"default:tin_ingot", "default:tin_ingot", "default:tin_ingot"}
     }
 })
