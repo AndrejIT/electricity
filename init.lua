@@ -2510,7 +2510,7 @@ minetest.register_craft({
 minetest.register_craft({
 	output = "electricity:biometrics_off",
 	recipe = {
-        {"default:stone", "group:electricity_conductor", "default:stone"},
+        {"default:stone", "electricity:wire_off", "default:stone"},
 		{"default:stone", "default:obsidian_glass", "default:stone"},
 		{"default:stone", "default:mese_crystal", "default:stone"}
     }
